@@ -14,10 +14,18 @@ KEY_DOWN = curses.KEY_DOWN
 KEY_ENTER = 10
 KEY_B = ord('b')
 
+header_message = ""
+header_message_time = 0
+
 def update_header(title_win, message):
+    global header_message, header_message_time
     title_win.clear()
     title_win.addstr(1, 2, "Blusound CLI", curses.A_BOLD)
-    title_win.addstr(1, 16, f" - {message}")
+    if message:
+        header_message = message
+        header_message_time = time.time()
+    if time.time() - header_message_time < 2:
+        title_win.addstr(1, 16, f" - {header_message}")
     title_win.refresh()
 
 def update_player_status(active_player):
@@ -170,11 +178,14 @@ def main(stdscr):
                     stdscr.addstr(height - 2, 2, "Error: Unable to go back", curses.A_BOLD)
                 update_header(title_win, "")
 
-        # Update player status every 10 seconds
+        # Update player status every 10 seconds and refresh header
         current_time = time.time()
         if current_time - last_update_time >= 10:
             update_player_status(active_player)
             last_update_time = current_time
+        
+        # Refresh header to clear message after 2 seconds
+        update_header(title_win, "")
 
 if __name__ == "__main__":
     curses.wrapper(main)
