@@ -41,10 +41,14 @@ def update_player_status(active_player):
             pass
 
 def main(stdscr):
-    global player_status  # Make player_status global so it can be accessed in update_player_status
+    global player_status, input_selection_mode, selected_input_index
 
     # Clear screen
     stdscr.clear()
+
+    # Initialize global variables
+    input_selection_mode = False
+    selected_input_index = 0
 
     # Hide the cursor
     curses.curs_set(0)
