@@ -2,6 +2,26 @@ import curses
 import time
 from zeroconf import ServiceBrowser, ServiceListener, Zeroconf
 
+class BlusoundPlayer:
+    def __init__(self, host_name, name):
+        self.host_name = host_name
+        self.name = name
+
+class MyListener(ServiceListener):
+    def __init__(self):
+        self.players = []
+
+    def add_service(self, zeroconf: Zeroconf, type, name):
+        info = zeroconf.get_service_info(type, name)
+        ipv4 = [addr for addr in info.parsed_addresses() if addr.count('.') == 3][0]
+        self.players.append(BlusoundPlayer(host_name=ipv4, name=info.server))
+
+    def remove_service(self, zeroconf, type, name):
+        self.players = [p for p in self.players if p.name != name]
+
+    def update_service(self, zeroconf, type, name):
+        pass
+
 def discover():
     zeroconf = Zeroconf()
     listener = MyListener()
@@ -60,22 +80,3 @@ def main(stdscr):
 
 if __name__ == "__main__":
     curses.wrapper(main)
-class BlusoundPlayer:
-    def __init__(self, host_name, name):
-        self.host_name = host_name
-        self.name = name
-
-class MyListener(ServiceListener):
-    def __init__(self):
-        self.players = []
-
-    def add_service(self, zeroconf: Zeroconf, type, name):
-        info = zeroconf.get_service_info(type, name)
-        ipv4 = [addr for addr in info.parsed_addresses() if addr.count('.') == 3][0]
-        self.players.append(BlusoundPlayer(host_name=ipv4, name=info.server))
-
-    def remove_service(self, zeroconf, type, name):
-        self.players = [p for p in self.players if p.name != name]
-
-    def update_service(self, zeroconf, type, name):
-        pass
