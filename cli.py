@@ -9,8 +9,8 @@ def create_volume_bar(volume, width=20):
     return f"[{'#' * filled}{'-' * (width - filled)}]"
 
 # Define key codes
-KEY_UP = 65
-KEY_DOWN = 66
+KEY_UP = curses.KEY_UP
+KEY_DOWN = curses.KEY_DOWN
 KEY_ENTER = 10
 KEY_B = ord('b')
 
@@ -118,24 +118,30 @@ def main(stdscr):
         else:
             if key == KEY_B:
                 player_mode = False
-            elif key == KEY_UP and active_player:
-                update_header(title_win, "Increasing volume...")
-                try:
-                    new_volume = min(100, player_status.volume + 5)
-                    active_player.set_volume(new_volume)
-                    player_status = active_player.get_status()
-                except requests.RequestException:
-                    stdscr.addstr(height - 2, 2, "Error: Unable to change volume", curses.A_BOLD)
-                update_header(title_win, "")
-            elif key == KEY_DOWN and active_player:
-                update_header(title_win, "Decreasing volume...")
-                try:
-                    new_volume = max(0, player_status.volume - 5)
-                    active_player.set_volume(new_volume)
-                    player_status = active_player.get_status()
-                except requests.RequestException:
-                    stdscr.addstr(height - 2, 2, "Error: Unable to change volume", curses.A_BOLD)
-                update_header(title_win, "")
+            elif key == KEY_UP:
+                if not player_mode and selected_index > 0:
+                    selected_index -= 1
+                elif player_mode and active_player:
+                    update_header(title_win, "Increasing volume...")
+                    try:
+                        new_volume = min(100, player_status.volume + 5)
+                        active_player.set_volume(new_volume)
+                        player_status = active_player.get_status()
+                    except requests.RequestException:
+                        stdscr.addstr(height - 2, 2, "Error: Unable to change volume", curses.A_BOLD)
+                    update_header(title_win, "")
+            elif key == KEY_DOWN:
+                if not player_mode and selected_index < len(players) - 1:
+                    selected_index += 1
+                elif player_mode and active_player:
+                    update_header(title_win, "Decreasing volume...")
+                    try:
+                        new_volume = max(0, player_status.volume - 5)
+                        active_player.set_volume(new_volume)
+                        player_status = active_player.get_status()
+                    except requests.RequestException:
+                        stdscr.addstr(height - 2, 2, "Error: Unable to change volume", curses.A_BOLD)
+                    update_header(title_win, "")
             elif key == ord('p') and active_player:
                 update_header(title_win, "Toggling play/pause...")
                 try:
