@@ -3,6 +3,11 @@ import time
 import threading
 from zeroconf import ServiceBrowser, ServiceListener, Zeroconf
 
+# Define arrow key codes
+KEY_UP = 65
+KEY_DOWN = 66
+KEY_ENTER = 10
+
 class BlusoundPlayer:
     def __init__(self, host_name, name):
         self.host_name = host_name
@@ -49,6 +54,7 @@ def main(stdscr):
 
     # Define color pairs
     curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLUE)
+    curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE)
 
     # Create a window for the title
     height, width = stdscr.getmaxyx()
@@ -59,6 +65,9 @@ def main(stdscr):
     players = threaded_discover()
     stdscr.addstr(5, 2, "Discovering Blusound players...")
     stdscr.refresh()
+
+    selected_index = 0
+    active_player = None
 
     # Main loop
     while True:
@@ -72,12 +81,19 @@ def main(stdscr):
         title_win.refresh()
 
         # Display instructions
-        stdscr.addstr(5, 2, "Press 'q' to quit")
+        stdscr.addstr(5, 2, "Use UP/DOWN arrows to select, ENTER to activate, 'q' to quit")
 
         # Display discovered players
         stdscr.addstr(7, 2, "Discovered Blusound players:")
-        for i, player in enumerate(players, start=1):
-            stdscr.addstr(8 + i, 4, f"{i}. {player.name} ({player.host_name})")
+        for i, player in enumerate(players):
+            if i == selected_index:
+                stdscr.attron(curses.color_pair(2))
+            if player == active_player:
+                stdscr.addstr(8 + i, 4, f"* {player.name} ({player.host_name})")
+            else:
+                stdscr.addstr(8 + i, 4, f"  {player.name} ({player.host_name})")
+            if i == selected_index:
+                stdscr.attroff(curses.color_pair(2))
 
         # Get user input (with timeout)
         stdscr.timeout(100)  # Set timeout to 100ms
@@ -85,6 +101,12 @@ def main(stdscr):
 
         if key == ord('q'):
             break
+        elif key == KEY_UP and selected_index > 0:
+            selected_index -= 1
+        elif key == KEY_DOWN and selected_index < len(players) - 1:
+            selected_index += 1
+        elif key == KEY_ENTER and players:
+            active_player = players[selected_index]
         elif key == -1:
             # No input, continue to next iteration
             continue
