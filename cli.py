@@ -2,6 +2,7 @@ import curses
 import time
 import threading
 import requests
+from typing import List, Optional
 from player import BlusoundPlayer, PlayerStatus, threaded_discover
 
 def create_volume_bar(volume, width=20):
@@ -40,15 +41,15 @@ def update_player_status(active_player):
         except requests.RequestException:
             pass
 
-def main(stdscr):
+def main(stdscr: curses.window) -> None:
     global player_status, input_selection_mode, selected_input_index
 
     # Clear screen
     stdscr.clear()
 
     # Initialize global variables
-    input_selection_mode = False
-    selected_input_index = 0
+    input_selection_mode: bool = False
+    selected_input_index: int = 0
 
     # Hide the cursor
     curses.curs_set(0)
@@ -59,21 +60,21 @@ def main(stdscr):
 
     # Create a window for the title
     height, width = stdscr.getmaxyx()
-    title_win = curses.newwin(3, width, 0, 0)
+    title_win: curses.window = curses.newwin(3, width, 0, 0)
     title_win.bkgd(' ', curses.color_pair(1))
 
     # Start discovering Blusound players in a separate thread
-    players = threaded_discover()
+    players: List[BlusoundPlayer] = threaded_discover()
     stdscr.addstr(5, 2, "Discovering Blusound players...")
     stdscr.refresh()
 
-    selected_index = 0
-    active_player = None
-    player_status = None
-    player_mode = False  # False for player selection, True for player control
+    selected_index: int = 0
+    active_player: Optional[BlusoundPlayer] = None
+    player_status: Optional[PlayerStatus] = None
+    player_mode: bool = False  # False for player selection, True for player control
 
     # Set up a timer for updating player status
-    last_update_time = 0
+    last_update_time: float = 0.0
 
     # Main loop
     while True:
