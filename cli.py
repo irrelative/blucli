@@ -14,6 +14,12 @@ KEY_DOWN = 66
 KEY_ENTER = 10
 KEY_B = ord('b')
 
+def update_header(title_win, message):
+    title_win.clear()
+    title_win.addstr(1, 2, "Blusound CLI", curses.A_BOLD)
+    title_win.addstr(1, 16, f" - {message}")
+    title_win.refresh()
+
 def update_player_status(active_player):
     global player_status
     if active_player:
@@ -60,9 +66,7 @@ def main(stdscr):
         stdscr.refresh()
 
         # Display the title
-        title_win.clear()
-        title_win.addstr(1, 2, "Blusound CLI", curses.A_BOLD)
-        title_win.refresh()
+        update_header(title_win, "")
 
         if not player_mode:
             # Display instructions for player selection mode
@@ -115,20 +119,25 @@ def main(stdscr):
             if key == KEY_B:
                 player_mode = False
             elif key == KEY_UP and active_player:
+                update_header(title_win, "Increasing volume...")
                 try:
                     new_volume = min(100, player_status.volume + 5)
                     active_player.set_volume(new_volume)
                     player_status = active_player.get_status()
                 except requests.RequestException:
                     stdscr.addstr(height - 2, 2, "Error: Unable to change volume", curses.A_BOLD)
+                update_header(title_win, "")
             elif key == KEY_DOWN and active_player:
+                update_header(title_win, "Decreasing volume...")
                 try:
                     new_volume = max(0, player_status.volume - 5)
                     active_player.set_volume(new_volume)
                     player_status = active_player.get_status()
                 except requests.RequestException:
                     stdscr.addstr(height - 2, 2, "Error: Unable to change volume", curses.A_BOLD)
+                update_header(title_win, "")
             elif key == ord('p') and active_player:
+                update_header(title_win, "Toggling play/pause...")
                 try:
                     if player_status and player_status.state == "play":
                         active_player.pause()
@@ -137,18 +146,23 @@ def main(stdscr):
                     player_status = active_player.get_status()
                 except requests.RequestException:
                     stdscr.addstr(height - 2, 2, "Error: Unable to change playback state", curses.A_BOLD)
+                update_header(title_win, "")
             elif key == ord('>') and active_player:
+                update_header(title_win, "Skipping to next track...")
                 try:
                     active_player.skip()
                     player_status = active_player.get_status()
                 except requests.RequestException:
                     stdscr.addstr(height - 2, 2, "Error: Unable to skip track", curses.A_BOLD)
+                update_header(title_win, "")
             elif key == ord('<') and active_player:
+                update_header(title_win, "Going to previous track...")
                 try:
                     active_player.back()
                     player_status = active_player.get_status()
                 except requests.RequestException:
                     stdscr.addstr(height - 2, 2, "Error: Unable to go back", curses.A_BOLD)
+                update_header(title_win, "")
 
         # Update player status every 10 seconds
         current_time = time.time()
