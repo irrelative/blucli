@@ -13,6 +13,7 @@ KEY_UP = curses.KEY_UP
 KEY_DOWN = curses.KEY_DOWN
 KEY_ENTER = 10
 KEY_B = ord('b')
+KEY_SPACE = ord(' ')
 
 header_message = ""
 header_message_time = 0
@@ -93,7 +94,7 @@ def main(stdscr):
                     stdscr.attroff(curses.color_pair(2))
         else:
             # Display instructions for player control mode
-            stdscr.addstr(5, 2, "UP/DOWN: volume, p: play/pause, >/<: skip/back, b: back to player list, q: quit")
+            stdscr.addstr(5, 2, "UP/DOWN: volume, p/SPACE: play/pause, >/<: skip/back, b: back to player list, q: quit")
             
             # Display active player status
             if active_player and player_status:
@@ -150,7 +151,7 @@ def main(stdscr):
                     except requests.RequestException:
                         stdscr.addstr(height - 2, 2, "Error: Unable to change volume", curses.A_BOLD)
                     update_header(title_win, "")
-            elif key == ord('p') and active_player:
+            elif (key == ord('p') or key == KEY_SPACE) and active_player:
                 update_header(title_win, "Toggling play/pause...")
                 try:
                     if player_status and player_status.state == "play":
