@@ -6,8 +6,13 @@ import logging
 from dataclasses import dataclass
 from zeroconf import ServiceBrowser, ServiceListener, Zeroconf
 
+import os
+
+# Ensure logs directory exists
+os.makedirs('logs', exist_ok=True)
+
 # Set up logging
-logging.basicConfig(filename='cli.log', level=logging.INFO,
+logging.basicConfig(filename='logs/cli.log', level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
