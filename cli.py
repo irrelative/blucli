@@ -105,6 +105,11 @@ def main(stdscr):
                 stdscr.addstr(11, 2, f"Now Playing: {player_status.name} - {player_status.artist}")
                 stdscr.addstr(12, 2, f"Album: {player_status.album}")
                 stdscr.addstr(13, 2, f"Service: {player_status.service}")
+                
+                # Display captured inputs
+                stdscr.addstr(15, 2, "Available Inputs:")
+                for i, input_data in enumerate(active_player.inputs):
+                    stdscr.addstr(16 + i, 4, f"{input_data.text} ({input_data.input_type})")
 
         # Get user input (with timeout)
         stdscr.timeout(100)  # Set timeout to 100ms

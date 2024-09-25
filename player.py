@@ -5,7 +5,7 @@ import threading
 import logging
 from dataclasses import dataclass
 from zeroconf import ServiceBrowser, ServiceListener, Zeroconf
-
+from typing import List, Dict
 import os
 
 # Ensure logs directory exists
@@ -27,12 +27,49 @@ class PlayerStatus:
     volume: int = 0
     service: str = ''
 
+@dataclass
+class PlayerInput:
+    type_index: str
+    player_name: str
+    text: str
+    input_type: str
+    id: str
+    url: str
+    image: str
+    type: str
+
 class BlusoundPlayer:
     def __init__(self, host_name, name):
         self.host_name = host_name
         self.name = name
         self.base_url = f"http://{self.host_name}:11000"
+        self.inputs: List[PlayerInput] = []
         logger.info(f"Initialized BlusoundPlayer: {self.name} at {self.host_name}")
+        self.capture_inputs()
+
+    def capture_inputs(self):
+        url = f"{self.base_url}/RadioBrowse"
+        params = {'service': 'Capture'}
+        try:
+            response = requests.get(url, params=params)
+            response.raise_for_status()
+            root = ET.fromstring(response.text)
+            self.inputs = []
+            for item in root.findall('item'):
+                input_data = PlayerInput(
+                    type_index=item.get('typeIndex', ''),
+                    player_name=item.get('playerName', ''),
+                    text=item.get('text', ''),
+                    input_type=item.get('inputType', ''),
+                    id=item.get('id', ''),
+                    url=item.get('URL', ''),
+                    image=item.get('image', ''),
+                    type=item.get('type', '')
+                )
+                self.inputs.append(input_data)
+            logger.info(f"Captured {len(self.inputs)} inputs for {self.name}")
+        except requests.RequestException as e:
+            logger.error(f"Error capturing inputs for {self.name}: {str(e)}")
 
     def get_status(self, timeout=None, etag=None):
         url = f"{self.base_url}/Status"
