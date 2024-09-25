@@ -26,6 +26,7 @@ class PlayerStatus:
     state: str = ''
     volume: int = 0
     service: str = ''
+    inputId: str = ''
 
 @dataclass
 class PlayerInput:
@@ -103,7 +104,8 @@ class BlusoundPlayer:
             name=safe_find(root, 'title1'),  # Changed from 'name' to 'title1'
             state=safe_find(root, 'state'),
             volume=safe_int(safe_find(root, 'volume')),
-            service=safe_find(root, 'service')
+            service=safe_find(root, 'service'),
+            inputId=safe_find(root, 'inputId')
         )
         logger.info(f"Status for {self.name}: {status}")
         return status

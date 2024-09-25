@@ -109,7 +109,12 @@ def main(stdscr):
                 # Display captured inputs
                 stdscr.addstr(15, 2, "Available Inputs:")
                 for i, input_data in enumerate(active_player.inputs):
-                    stdscr.addstr(16 + i, 4, f"{input_data.text} ({input_data.input_type})")
+                    if player_status and input_data.id == player_status.inputId:
+                        stdscr.attron(curses.color_pair(2))
+                        stdscr.addstr(16 + i, 4, f"* {input_data.text} ({input_data.input_type})")
+                        stdscr.attroff(curses.color_pair(2))
+                    else:
+                        stdscr.addstr(16 + i, 4, f"  {input_data.text} ({input_data.input_type})")
 
         # Get user input (with timeout)
         stdscr.timeout(100)  # Set timeout to 100ms
