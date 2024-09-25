@@ -10,7 +10,17 @@ KEY_DOWN = 66
 KEY_ENTER = 10
 KEY_B = ord('b')
 
+def update_player_status(active_player):
+    global player_status
+    if active_player:
+        try:
+            player_status = active_player.get_status()
+        except requests.RequestException:
+            pass
+
 def main(stdscr):
+    global player_status  # Make player_status global so it can be accessed in update_player_status
+
     # Clear screen
     stdscr.clear()
 
@@ -35,6 +45,9 @@ def main(stdscr):
     active_player = None
     player_status = None
     player_mode = False  # False for player selection, True for player control
+
+    # Set up a timer for updating player status
+    last_update_time = 0
 
     # Main loop
     while True:
@@ -132,12 +145,11 @@ def main(stdscr):
                 except requests.RequestException:
                     stdscr.addstr(height - 2, 2, "Error: Unable to go back", curses.A_BOLD)
 
-        # Update status if there's an active player
-        if active_player:
-            try:
-                player_status = active_player.get_status()
-            except requests.RequestException:
-                pass
+        # Update player status every 10 seconds
+        current_time = time.time()
+        if current_time - last_update_time >= 10:
+            update_player_status(active_player)
+            last_update_time = current_time
 
 if __name__ == "__main__":
     curses.wrapper(main)
