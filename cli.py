@@ -17,10 +17,11 @@ KEY_B = ord('b')
 KEY_SPACE = ord(' ')
 KEY_I = ord('i')
 
-header_message = ""
-header_message_time = 0
-input_selection_mode = False
-selected_input_index = 0
+header_message: str = ""
+header_message_time: float = 0
+input_selection_mode: bool = False
+selected_input_index: int = 0
+player_status: Optional[PlayerStatus] = None
 
 def update_header(title_win, message):
     global header_message, header_message_time
@@ -48,8 +49,8 @@ def main(stdscr: curses.window) -> None:
     stdscr.clear()
 
     # Initialize global variables
-    input_selection_mode: bool = False
-    selected_input_index: int = 0
+    input_selection_mode = False
+    selected_input_index = 0
 
     # Hide the cursor
     curses.curs_set(0)
@@ -70,7 +71,6 @@ def main(stdscr: curses.window) -> None:
 
     selected_index: int = 0
     active_player: Optional[BlusoundPlayer] = None
-    player_status: Optional[PlayerStatus] = None
     player_mode: bool = False  # False for player selection, True for player control
 
     # Set up a timer for updating player status
