@@ -14,13 +14,13 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class PlayerStatus:
-    etag: str
-    album: str
-    artist: str
-    name: str
-    state: str
-    volume: int
-    service: str
+    etag: str = ''
+    album: str = ''
+    artist: str = ''
+    name: str = ''
+    state: str = ''
+    volume: int = 0
+    service: str = ''
 
 class BlusoundPlayer:
     def __init__(self, host_name, name):
@@ -43,14 +43,25 @@ class BlusoundPlayer:
 
         logger.info(f"Got status for {self.name}: {response.text}")
         root = ET.fromstring(response.text)
+        
+        def safe_find(element, tag, default=''):
+            found = element.find(tag)
+            return found.text if found is not None else default
+
+        def safe_int(value, default=0):
+            try:
+                return int(value)
+            except (ValueError, TypeError):
+                return default
+
         status = PlayerStatus(
-            etag=root.get('etag'),
-            album=root.find('album').text,
-            artist=root.find('artist').text,
-            name=root.find('name').text,
-            state=root.find('state').text,
-            volume=int(root.find('volume').text),
-            service=root.find('service').text
+            etag=root.get('etag', ''),
+            album=safe_find(root, 'album'),
+            artist=safe_find(root, 'artist'),
+            name=safe_find(root, 'title1'),  # Changed from 'name' to 'title1'
+            state=safe_find(root, 'state'),
+            volume=safe_int(safe_find(root, 'volume')),
+            service=safe_find(root, 'service')
         )
         logger.info(f"Status for {self.name}: {status}")
         return status
