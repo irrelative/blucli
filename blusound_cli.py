@@ -1,5 +1,6 @@
 import curses
 import time
+import threading
 from zeroconf import ServiceBrowser, ServiceListener, Zeroconf
 
 class BlusoundPlayer:
@@ -22,13 +23,22 @@ class MyListener(ServiceListener):
     def update_service(self, zeroconf, type, name):
         pass
 
-def discover():
+def discover(players):
     zeroconf = Zeroconf()
     listener = MyListener()
     browser = ServiceBrowser(zeroconf, "_musc._tcp.local.", listener)
-    time.sleep(5)  # Wait for 5 seconds to discover players
-    zeroconf.close()
-    return listener.players
+    try:
+        while True:
+            time.sleep(1)
+            players[:] = listener.players
+    finally:
+        zeroconf.close()
+
+def threaded_discover():
+    players = []
+    discovery_thread = threading.Thread(target=discover, args=(players,), daemon=True)
+    discovery_thread.start()
+    return players
 
 def main(stdscr):
     # Clear screen
@@ -45,10 +55,10 @@ def main(stdscr):
     title_win = curses.newwin(3, width, 0, 0)
     title_win.bkgd(' ', curses.color_pair(1))
 
-    # Discover Blusound players
+    # Start discovering Blusound players in a separate thread
+    players = threaded_discover()
     stdscr.addstr(5, 2, "Discovering Blusound players...")
     stdscr.refresh()
-    players = discover()
 
     # Main loop
     while True:
@@ -69,14 +79,15 @@ def main(stdscr):
         for i, player in enumerate(players, start=1):
             stdscr.addstr(8 + i, 4, f"{i}. {player.name} ({player.host_name})")
 
-        # Get user input
+        # Get user input (with timeout)
+        stdscr.timeout(100)  # Set timeout to 100ms
         key = stdscr.getch()
 
         if key == ord('q'):
             break
-
-        # Small delay to reduce CPU usage
-        time.sleep(0.1)
+        elif key == -1:
+            # No input, continue to next iteration
+            continue
 
 if __name__ == "__main__":
     curses.wrapper(main)
