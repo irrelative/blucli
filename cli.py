@@ -4,6 +4,10 @@ import threading
 import requests
 from player import BlusoundPlayer, PlayerStatus, threaded_discover
 
+def create_volume_bar(volume, width=20):
+    filled = int(volume / 100 * width)
+    return f"[{'#' * filled}{'-' * (width - filled)}]"
+
 # Define key codes
 KEY_UP = 65
 KEY_DOWN = 66
@@ -83,7 +87,8 @@ def main(stdscr):
             if active_player and player_status:
                 stdscr.addstr(8, 2, f"Active Player: {active_player.name}")
                 stdscr.addstr(9, 2, f"Status: {player_status.state}")
-                stdscr.addstr(10, 2, f"Volume: {player_status.volume}")
+                volume_bar = create_volume_bar(player_status.volume)
+                stdscr.addstr(10, 2, f"Volume: {volume_bar} {player_status.volume}%")
                 stdscr.addstr(11, 2, f"Now Playing: {player_status.name} - {player_status.artist}")
                 stdscr.addstr(12, 2, f"Album: {player_status.album}")
                 stdscr.addstr(13, 2, f"Service: {player_status.service}")
