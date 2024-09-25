@@ -2,6 +2,14 @@ import curses
 import time
 from zeroconf import ServiceBrowser, ServiceListener, Zeroconf
 
+def discover():
+    zeroconf = Zeroconf()
+    listener = MyListener()
+    browser = ServiceBrowser(zeroconf, "_musc._tcp.local.", listener)
+    time.sleep(5)  # Wait for 5 seconds to discover players
+    zeroconf.close()
+    return listener.players
+
 def main(stdscr):
     # Clear screen
     stdscr.clear()
@@ -71,11 +79,3 @@ class MyListener(ServiceListener):
 
     def update_service(self, zeroconf, type, name):
         pass
-
-def discover():
-    zeroconf = Zeroconf()
-    listener = MyListener()
-    browser = ServiceBrowser(zeroconf, "_musc._tcp.local.", listener)
-    time.sleep(5)  # Wait for 5 seconds to discover players
-    zeroconf.close()
-    return listener.players
