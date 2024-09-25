@@ -141,6 +141,13 @@ class BlusoundPlayer:
         response = requests.get(url)
         response.raise_for_status()
 
+    def select_input(self, input_type, index):
+        url = f"{self.base_url}/Play"
+        params = {'inputType': input_type, 'index': index}
+        logger.info(f"Selecting input for {self.name}: type={input_type}, index={index}")
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+
 class MyListener(ServiceListener):
     def __init__(self):
         self.players = []
