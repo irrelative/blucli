@@ -41,6 +41,7 @@ class BlusoundPlayer:
         response = requests.get(url, params=params)
         response.raise_for_status()
 
+        logger.info(f"Got status for {self.name}: {response.text}")
         root = ET.fromstring(response.text)
         status = PlayerStatus(
             etag=root.get('etag'),
