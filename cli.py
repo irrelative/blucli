@@ -107,16 +107,17 @@ def handle_player_selection(key: int, selected_index: int, players: List[Blusoun
             return False, active_player, None
     return False, active_player, None
 
-def handle_player_control(key: int, active_player: BlusoundPlayer, player_status: PlayerStatus, title_win: curses.window, stdscr: curses.window) -> Tuple[bool, bool]:
+def handle_player_control(key: int, active_player: BlusoundPlayer, player_status: PlayerStatus, title_win: curses.window, stdscr: curses.window) -> Tuple[bool, bool, Optional[PlayerStatus]]:
+    new_status = None
     if key == KEY_B:
-        return False, False
+        return False, False, None
     elif key == KEY_UP:
         update_header(title_win, "Increasing volume...")
         try:
             new_volume = min(100, player_status.volume + 5)
             active_player.set_volume(new_volume)
-            player_status = active_player.get_status()
-            display_player_control(stdscr, active_player, player_status)
+            new_status = active_player.get_status()
+            display_player_control(stdscr, active_player, new_status)
         except requests.RequestException:
             pass
         update_header(title_win, "")
@@ -125,8 +126,8 @@ def handle_player_control(key: int, active_player: BlusoundPlayer, player_status
         try:
             new_volume = max(0, player_status.volume - 5)
             active_player.set_volume(new_volume)
-            player_status = active_player.get_status()
-            display_player_control(stdscr, active_player, player_status)
+            new_status = active_player.get_status()
+            display_player_control(stdscr, active_player, new_status)
         except requests.RequestException:
             pass
         update_header(title_win, "")
@@ -137,7 +138,7 @@ def handle_player_control(key: int, active_player: BlusoundPlayer, player_status
                 active_player.pause()
             else:
                 active_player.play()
-            player_status = active_player.get_status()
+            new_status = active_player.get_status()
         except requests.RequestException:
             pass
         update_header(title_win, "")
@@ -145,7 +146,7 @@ def handle_player_control(key: int, active_player: BlusoundPlayer, player_status
         update_header(title_win, "Skipping to next track...")
         try:
             active_player.skip()
-            player_status = active_player.get_status()
+            new_status = active_player.get_status()
         except requests.RequestException:
             pass
         update_header(title_win, "")
@@ -153,13 +154,13 @@ def handle_player_control(key: int, active_player: BlusoundPlayer, player_status
         update_header(title_win, "Going to previous track...")
         try:
             active_player.back()
-            player_status = active_player.get_status()
+            new_status = active_player.get_status()
         except requests.RequestException:
             pass
         update_header(title_win, "")
     elif key == KEY_I:
-        return True, True
-    return True, False
+        return True, True, None
+    return True, False, new_status
 
 def handle_input_selection(key: int, active_player: BlusoundPlayer, selected_input_index: int, title_win: curses.window) -> bool:
     if key == KEY_B:
@@ -234,7 +235,9 @@ def main(stdscr: curses.window) -> None:
                 stdscr.addstr(height - 2, 2, "Error: Unable to connect to the player", curses.A_BOLD)
         else:
             if not input_selection_mode:
-                player_mode, input_selection_mode = handle_player_control(key, active_player, player_status, title_win, stdscr)
+                player_mode, input_selection_mode, new_status = handle_player_control(key, active_player, player_status, title_win, stdscr)
+                if new_status:
+                    player_status = new_status
                 if input_selection_mode:
                     selected_input_index = 0
             else:
