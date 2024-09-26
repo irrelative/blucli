@@ -98,7 +98,7 @@ def display_player_control(stdscr: curses.window, active_player: BlusoundPlayer,
     if show_shortcuts:
         display_shortcuts(stdscr)
     elif active_player and isinstance(player_status, PlayerStatus):
-        labels = ["Status", "Volume", "Now Playing", "Album", "Service"]
+        labels = ["Status", "Volume", "Now Playing", "Album", "Service", "Active Input"]
         max_label_width = max(len(label) for label in labels)
         
         stdscr.addstr(5, 2, f"{'Status:':<{max_label_width + 1}} {player_status.state}")
@@ -108,14 +108,11 @@ def display_player_control(stdscr: curses.window, active_player: BlusoundPlayer,
         stdscr.addstr(8, 2, f"{'Album:':<{max_label_width + 1}} {player_status.album}")
         stdscr.addstr(9, 2, f"{'Service:':<{max_label_width + 1}} {player_status.service}")
         
-        stdscr.addstr(12, 2, "Active Input:")
         active_input = next((input_data for input_data in active_player.inputs if input_data.id == player_status.inputId), None)
         if active_input:
-            stdscr.attron(curses.color_pair(2))
-            stdscr.addstr(13, 4, f"* {active_input.text} ({active_input.input_type})")
-            stdscr.attroff(curses.color_pair(2))
+            stdscr.addstr(10, 2, f"{'Active Input:':<{max_label_width + 1}} {active_input.text} ({active_input.input_type})")
         else:
-            stdscr.addstr(13, 4, "No active input")
+            stdscr.addstr(10, 2, f"{'Active Input:':<{max_label_width + 1}} No active input")
         
         stdscr.addstr(stdscr.getmaxyx()[0] - 1, 2, "Press '?' to show keyboard shortcuts")
 
