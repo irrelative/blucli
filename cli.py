@@ -44,6 +44,7 @@ class BlusoundCLI:
         self.players: List[BlusoundPlayer] = []
         self.last_update_time: float = 0.0
         self.current_sources: List[PlayerSource] = []
+        self.pretty_print_active: bool = False
 
     def update_header(self, title_win: curses.window, message: str, view: str, active_player: Optional[BlusoundPlayer] = None):
         title_win.clear()
@@ -290,7 +291,7 @@ class BlusoundCLI:
             pad.refresh(0, 0, 0, 0, height - 1, width - 1)
             stdscr.addstr(height - 1, 0, "Press any key to return")
             stdscr.refresh()
-            stdscr.getch()
+            self.pretty_print_active = True
 
     def handle_source_selection(self, key: int, title_win: curses.window) -> Tuple[bool, List[int]]:
         if key == KEY_B:
@@ -339,24 +340,27 @@ class BlusoundCLI:
         player_mode: bool = False
 
         while True:
-            stdscr.clear()
-            stdscr.refresh()
-            if not player_mode:
-                self.update_header(title_win, "", "Player Selection")
-                self.display_player_selection(stdscr)
-            else:
-                if not self.source_selection_mode:
-                    self.update_header(title_win, "", "Player Control", self.active_player)
-                    self.display_player_control(stdscr)
+            if not self.pretty_print_active:
+                stdscr.clear()
+                stdscr.refresh()
+                if not player_mode:
+                    self.update_header(title_win, "", "Player Selection")
+                    self.display_player_selection(stdscr)
                 else:
-                    self.update_header(title_win, "", "Source Selection", self.active_player)
-                    self.display_source_selection(stdscr)
+                    if not self.source_selection_mode:
+                        self.update_header(title_win, "", "Player Control", self.active_player)
+                        self.display_player_control(stdscr)
+                    else:
+                        self.update_header(title_win, "", "Source Selection", self.active_player)
+                        self.display_source_selection(stdscr)
 
             stdscr.timeout(100)
             key = stdscr.getch()
 
             if key == ord('q'):
                 break
+            elif self.pretty_print_active:
+                self.pretty_print_active = False
             elif not player_mode:
                 if self.selector_shortcuts_open:
                     if key != -1:
@@ -379,7 +383,8 @@ class BlusoundCLI:
                 self.update_player_status()
                 self.last_update_time = current_time
 
-            self.update_header(title_win, "", "Player Selection" if not player_mode else "Player Control")
+            if not self.pretty_print_active:
+                self.update_header(title_win, "", "Player Selection" if not player_mode else "Player Control")
 
 if __name__ == "__main__":
     cli = BlusoundCLI()
