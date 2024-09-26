@@ -4,6 +4,7 @@ import requests
 from typing import List, Optional, Tuple
 from player import BlusoundPlayer, PlayerStatus, PlayerSource, threaded_discover
 import logging
+import json
 
 # Set up logging
 logging.basicConfig(filename='logs/cli.log', level=logging.INFO,
@@ -165,9 +166,10 @@ class BlusoundCLI:
 
         shortcuts = [
             ("UP/DOWN", "Adjust volume"),
-            ("p/SPACE", "Play/Pause"),
+            ("SPACE", "Play/Pause"),
             (">/<", "Skip/Previous track"),
             ("i", "Select input"),
+            ("p", "Pretty print player state"),
             ("b", "Back to player list"),
             ("q", "Quit application"),
         ]
@@ -241,7 +243,7 @@ class BlusoundCLI:
                 self.update_player_status()
                 self.display_player_control(stdscr)
             self.update_header(title_win, message, "Player Control")
-        elif (key == KEY_P or key == KEY_SPACE) and self.active_player:
+        elif key == KEY_SPACE and self.active_player:
             self.update_header(title_win, "Toggling play/pause...", "Player Control")
             success, message = self.active_player.toggle_play_pause()
             if success:
@@ -267,7 +269,28 @@ class BlusoundCLI:
         elif key == KEY_D:
             self.detail_view = not self.detail_view
             self.update_header(title_win, f"{'Detailed' if self.detail_view else 'Summary'} view", "Player Control")
+        elif key == KEY_P:
+            self.pretty_print_player_state(stdscr)
         return True, False
+
+    def pretty_print_player_state(self, stdscr: curses.window):
+        if self.active_player and self.player_status:
+            player_state = {
+                "name": self.active_player.name,
+                "host": self.active_player.host_name,
+                "status": self.player_status.__dict__
+            }
+            pretty_state = json.dumps(player_state, indent=2)
+            
+            height, width = stdscr.getmaxyx()
+            pad = curses.newpad(len(pretty_state.split('\n')) + 2, max(len(line) for line in pretty_state.split('\n')) + 2)
+            pad.addstr(0, 0, pretty_state)
+            
+            stdscr.clear()
+            pad.refresh(0, 0, 0, 0, height - 1, width - 1)
+            stdscr.addstr(height - 1, 0, "Press any key to return")
+            stdscr.refresh()
+            stdscr.getch()
 
     def handle_source_selection(self, key: int, title_win: curses.window) -> Tuple[bool, List[int]]:
         if key == KEY_B:
