@@ -27,6 +27,33 @@ class PlayerStatus:
     volume: int = 0
     service: str = ''
     inputId: str = ''
+    can_move_playback: bool = False
+    can_seek: bool = False
+    cursor: int = 0
+    db: float = 0.0
+    fn: str = ''
+    image: str = ''
+    indexing: int = 0
+    mid: int = 0
+    mode: int = 0
+    mute: bool = False
+    pid: int = 0
+    prid: int = 0
+    quality: int = 0
+    repeat: int = 0
+    service_icon: str = ''
+    service_name: str = ''
+    shuffle: bool = False
+    sid: int = 0
+    sleep: str = ''
+    song: int = 0
+    stream_format: str = ''
+    sync_stat: int = 0
+    title1: str = ''
+    title2: str = ''
+    title3: str = ''
+    totlen: int = 0
+    secs: int = 0
 
 @dataclass
 class PlayerInput:
@@ -105,7 +132,34 @@ class BlusoundPlayer:
                 state=safe_find(root, 'state'),
                 volume=safe_int(safe_find(root, 'volume')),
                 service=safe_find(root, 'service'),
-                inputId=safe_find(root, 'inputId')
+                inputId=safe_find(root, 'inputId'),
+                can_move_playback=safe_find(root, 'canMovePlayback') == 'true',
+                can_seek=safe_int(safe_find(root, 'canSeek')) == 1,
+                cursor=safe_int(safe_find(root, 'cursor')),
+                db=float(safe_find(root, 'db', '0')),
+                fn=safe_find(root, 'fn'),
+                image=safe_find(root, 'image'),
+                indexing=safe_int(safe_find(root, 'indexing')),
+                mid=safe_int(safe_find(root, 'mid')),
+                mode=safe_int(safe_find(root, 'mode')),
+                mute=safe_int(safe_find(root, 'mute')) == 1,
+                pid=safe_int(safe_find(root, 'pid')),
+                prid=safe_int(safe_find(root, 'prid')),
+                quality=safe_int(safe_find(root, 'quality')),
+                repeat=safe_int(safe_find(root, 'repeat')),
+                service_icon=safe_find(root, 'serviceIcon'),
+                service_name=safe_find(root, 'serviceName'),
+                shuffle=safe_int(safe_find(root, 'shuffle')) == 1,
+                sid=safe_int(safe_find(root, 'sid')),
+                sleep=safe_find(root, 'sleep'),
+                song=safe_int(safe_find(root, 'song')),
+                stream_format=safe_find(root, 'streamFormat'),
+                sync_stat=safe_int(safe_find(root, 'syncStat')),
+                title1=safe_find(root, 'title1'),
+                title2=safe_find(root, 'title2'),
+                title3=safe_find(root, 'title3'),
+                totlen=safe_int(safe_find(root, 'totlen')),
+                secs=safe_int(safe_find(root, 'secs'))
             )
             logger.info(f"Status for {self.name}: {status}")
             return True, status

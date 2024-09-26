@@ -4,6 +4,7 @@ import requests
 from typing import List, Optional, Tuple, Union
 from player import BlusoundPlayer, PlayerStatus, threaded_discover
 import logging
+import textwrap
 
 
 # Set up logging
@@ -94,27 +95,48 @@ def display_selector_shortcuts(stdscr: curses.window) -> None:
     modal_win.addstr(modal_height - 2, 2, "Press any key to close", curses.A_ITALIC)
     modal_win.refresh()
 
-def display_player_control(stdscr: curses.window, active_player: BlusoundPlayer, player_status: Optional[PlayerStatus], show_shortcuts: bool) -> None:
+def display_player_control(stdscr: curses.window, active_player: BlusoundPlayer, player_status: Optional[PlayerStatus], show_shortcuts: bool, detail_view: bool) -> None:
     if show_shortcuts:
         display_shortcuts(stdscr)
     elif active_player and isinstance(player_status, PlayerStatus):
-        labels = ["Status", "Volume", "Now Playing", "Album", "Service", "Active Input"]
-        max_label_width = max(len(label) for label in labels)
-        
-        stdscr.addstr(5, 2, f"{'Status:':<{max_label_width + 1}} {player_status.state}")
-        volume_bar = create_volume_bar(player_status.volume)
-        stdscr.addstr(6, 2, f"{'Volume:':<{max_label_width + 1}} {volume_bar} {player_status.volume}%")
-        stdscr.addstr(7, 2, f"{'Now Playing:':<{max_label_width + 1}} {player_status.name} - {player_status.artist}")
-        stdscr.addstr(8, 2, f"{'Album:':<{max_label_width + 1}} {player_status.album}")
-        stdscr.addstr(9, 2, f"{'Service:':<{max_label_width + 1}} {player_status.service}")
-        
-        active_input = next((input_data for input_data in active_player.inputs if input_data.id == player_status.inputId), None)
-        if active_input:
-            stdscr.addstr(10, 2, f"{'Active Input:':<{max_label_width + 1}} {active_input.text} ({active_input.input_type})")
+        if detail_view:
+            display_detail_view(stdscr, player_status)
         else:
-            stdscr.addstr(10, 2, f"{'Active Input:':<{max_label_width + 1}} No active input")
+            display_summary_view(stdscr, active_player, player_status)
         
-        stdscr.addstr(stdscr.getmaxyx()[0] - 1, 2, "Press '?' to show keyboard shortcuts")
+        stdscr.addstr(stdscr.getmaxyx()[0] - 1, 2, "Press '?' for shortcuts, 'd' for detail view")
+
+def display_summary_view(stdscr: curses.window, active_player: BlusoundPlayer, player_status: PlayerStatus) -> None:
+    labels = ["Status", "Volume", "Now Playing", "Album", "Service", "Active Input"]
+    max_label_width = max(len(label) for label in labels)
+    
+    stdscr.addstr(5, 2, f"{'Status:':<{max_label_width + 1}} {player_status.state}")
+    volume_bar = create_volume_bar(player_status.volume)
+    stdscr.addstr(6, 2, f"{'Volume:':<{max_label_width + 1}} {volume_bar} {player_status.volume}%")
+    stdscr.addstr(7, 2, f"{'Now Playing:':<{max_label_width + 1}} {player_status.name} - {player_status.artist}")
+    stdscr.addstr(8, 2, f"{'Album:':<{max_label_width + 1}} {player_status.album}")
+    stdscr.addstr(9, 2, f"{'Service:':<{max_label_width + 1}} {player_status.service}")
+    
+    active_input = next((input_data for input_data in active_player.inputs if input_data.id == player_status.inputId), None)
+    if active_input:
+        stdscr.addstr(10, 2, f"{'Active Input:':<{max_label_width + 1}} {active_input.text} ({active_input.input_type})")
+    else:
+        stdscr.addstr(10, 2, f"{'Active Input:':<{max_label_width + 1}} No active input")
+
+def display_detail_view(stdscr: curses.window, player_status: PlayerStatus) -> None:
+    height, width = stdscr.getmaxyx()
+    max_label_width = max(len(attr) for attr in vars(player_status))
+    
+    y = 5
+    for attr, value in vars(player_status).items():
+        if y >= height - 2:
+            break
+        label = f"{attr}:"
+        value_str = str(value)
+        if len(value_str) > width - max_label_width - 5:
+            value_str = value_str[:width - max_label_width - 8] + "..."
+        stdscr.addstr(y, 2, f"{label:<{max_label_width + 1}} {value_str}")
+        y += 1
 
 def display_shortcuts(stdscr: curses.window) -> None:
     height, width = stdscr.getmaxyx()
@@ -173,11 +195,11 @@ def handle_player_selection(key: int, selected_index: int, players: List[Blusoun
         return False, active_player, None, True
     return False, active_player, None, False
 
-def handle_player_control(key: int, active_player: Optional[BlusoundPlayer], player_status: Optional[PlayerStatus], title_win: curses.window, stdscr: curses.window) -> Tuple[bool, bool, Optional[PlayerStatus], bool]:
-    global shortcuts_open
+def handle_player_control(key: int, active_player: Optional[BlusoundPlayer], player_status: Optional[PlayerStatus], title_win: curses.window, stdscr: curses.window) -> Tuple[bool, bool, Optional[PlayerStatus], bool, bool]:
+    global shortcuts_open, detail_view
     new_status = None
     if key == KEY_B:
-        return False, False, None, False
+        return False, False, None, False, detail_view
     elif key == KEY_UP and active_player:
         update_header(title_win, "Increasing volume...", "Player Control")
         new_volume = min(100, player_status.volume + 5) if player_status else 5
@@ -185,7 +207,7 @@ def handle_player_control(key: int, active_player: Optional[BlusoundPlayer], pla
         if success:
             success, new_status = active_player.get_status()
             if success:
-                display_player_control(stdscr, active_player, new_status, shortcuts_open)
+                display_player_control(stdscr, active_player, new_status, shortcuts_open, detail_view)
         update_header(title_win, message, "Player Control")
     elif key == KEY_DOWN:
         update_header(title_win, "Decreasing volume...", "Player Control")
@@ -194,7 +216,7 @@ def handle_player_control(key: int, active_player: Optional[BlusoundPlayer], pla
         if success:
             success, new_status = active_player.get_status()
             if success:
-                display_player_control(stdscr, active_player, new_status, shortcuts_open)
+                display_player_control(stdscr, active_player, new_status, shortcuts_open, detail_view)
         update_header(title_win, message, "Player Control")
     elif (key == ord('p') or key == KEY_SPACE) and active_player:
         update_header(title_win, "Toggling play/pause...", "Player Control")
@@ -218,10 +240,13 @@ def handle_player_control(key: int, active_player: Optional[BlusoundPlayer], pla
             success, new_status = active_player.get_status()
         update_header(title_win, message, "Player Control")
     elif key == KEY_I:
-        return True, True, None, False
+        return True, True, None, False, detail_view
     elif key == KEY_QUESTION:
         shortcuts_open = not shortcuts_open
-    return True, False, new_status, shortcuts_open
+    elif key == ord('d'):
+        detail_view = not detail_view
+        update_header(title_win, f"{'Detailed' if detail_view else 'Summary'} view", "Player Control")
+    return True, False, new_status, shortcuts_open, detail_view
 
 def handle_input_selection(key: int, active_player: BlusoundPlayer, selected_input_index: int, title_win: curses.window) -> Tuple[bool, int, Optional[PlayerStatus]]:
     if key == KEY_B:
@@ -242,7 +267,7 @@ def handle_input_selection(key: int, active_player: BlusoundPlayer, selected_inp
     return True, selected_input_index, None
 
 def main(stdscr: curses.window) -> None:
-    global input_selection_mode, selected_input_index, shortcuts_open, selector_shortcuts_open
+    global input_selection_mode, selected_input_index, shortcuts_open, selector_shortcuts_open, detail_view
 
     # Clear screen and initialize
     stdscr.clear()
@@ -250,6 +275,7 @@ def main(stdscr: curses.window) -> None:
     selected_input_index = 0
     shortcuts_open = False
     selector_shortcuts_open = False
+    detail_view = False
     curses.curs_set(0)
     curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLUE)
     curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE)
