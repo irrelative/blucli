@@ -74,7 +74,7 @@ class BlusoundPlayer:
         self.base_url = f"http://{self.host_name}:11000"
         self.sources: List[PlayerSource] = []
         logger.info(f"Initialized BlusoundPlayer: {self.name} at {self.host_name}")
-        self.capture_sources()
+        self.initialize_sources()
 
     def capture_sources(self, browse_key: Optional[str] = None) -> List[PlayerSource]:
         url = f"{self.base_url}/Browse"
@@ -107,6 +107,11 @@ class BlusoundPlayer:
 
     def initialize_sources(self) -> None:
         self.sources = self.capture_sources()
+        if not self.sources:
+            logger.warning(f"No sources found for {self.name}. Retrying...")
+            time.sleep(1)  # Wait for a second before retrying
+            self.sources = self.capture_sources()
+        logger.info(f"Initialized {len(self.sources)} sources for {self.name}")
 
     def get_status(self, timeout: Optional[int] = None, etag: Optional[str] = None) -> Tuple[bool, Union[PlayerStatus, str]]:
         url = f"{self.base_url}/Status"
