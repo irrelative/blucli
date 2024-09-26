@@ -162,9 +162,9 @@ def handle_player_control(key: int, active_player: BlusoundPlayer, player_status
         return True, True, None
     return True, False, new_status
 
-def handle_input_selection(key: int, active_player: BlusoundPlayer, selected_input_index: int, title_win: curses.window) -> bool:
+def handle_input_selection(key: int, active_player: BlusoundPlayer, selected_input_index: int, title_win: curses.window) -> Tuple[bool, int]:
     if key == KEY_B:
-        return False
+        return False, selected_input_index
     elif key == KEY_UP and selected_input_index > 0:
         selected_input_index -= 1
     elif key == KEY_DOWN and selected_input_index < len(active_player.inputs) - 1:
@@ -175,11 +175,11 @@ def handle_input_selection(key: int, active_player: BlusoundPlayer, selected_inp
         try:
             active_player.select_input(selected_input.input_type, selected_input.type_index)
             player_status = active_player.get_status()
-            return False
+            return False, selected_input_index
         except requests.RequestException:
             pass
         update_header(title_win, "")
-    return True
+    return True, selected_input_index
 
 def main(stdscr: curses.window) -> None:
     global player_status, input_selection_mode, selected_input_index
@@ -241,7 +241,7 @@ def main(stdscr: curses.window) -> None:
                 if input_selection_mode:
                     selected_input_index = 0
             else:
-                input_selection_mode = handle_input_selection(key, active_player, selected_input_index, title_win)
+                input_selection_mode, selected_input_index = handle_input_selection(key, active_player, selected_input_index, title_win)
 
         # Update player status every 10 seconds
         current_time = time.time()
