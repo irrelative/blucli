@@ -34,16 +34,14 @@ class BlusoundCLI:
         self.header_message_time: float = 0
         self.shortcuts_open: bool = False
         self.selector_shortcuts_open: bool = False
-        self.input_selection_mode: bool = False
-        self.selected_input_index: int = 0
+        self.source_selection_mode: bool = False
+        self.selected_source_index: int = 0
         self.player_status: Optional[PlayerStatus] = None
         self.detail_view: bool = False
         self.selected_index: int = 0
         self.active_player: Optional[BlusoundPlayer] = None
         self.players: List[BlusoundPlayer] = []
         self.last_update_time: float = 0.0
-        self.source_selection_mode: bool = False
-        self.selected_source_index: int = 0
 
     def update_header(self, title_win: curses.window, message: str, view: str, active_player: Optional[BlusoundPlayer] = None):
         title_win.clear()
@@ -179,25 +177,12 @@ class BlusoundCLI:
         modal_win.addstr(modal_height - 2, 2, "Press any key to close", curses.A_ITALIC)
         modal_win.refresh()
 
-    def display_input_selection(self, stdscr: curses.window):
-        active_player = self.active_player
-        selected_input_index = self.selected_input_index
-        stdscr.addstr(5, 2, "UP/DOWN: select input, ENTER: confirm selection, b: back to player control")
-        stdscr.addstr(8, 2, "Select Input:")
-        for i, input_data in enumerate(active_player.inputs):
-            if i == selected_input_index:
-                stdscr.attron(curses.color_pair(2))
-                stdscr.addstr(9 + i, 4, f"> {input_data.text} ({input_data.input_type})")
-                stdscr.attroff(curses.color_pair(2))
-            else:
-                stdscr.addstr(9 + i, 4, f"  {input_data.text} ({input_data.input_type})")
-
-    def display_streaming_source_selection(self, stdscr: curses.window):
+    def display_source_selection(self, stdscr: curses.window):
         active_player = self.active_player
         selected_source_index = self.selected_source_index
         stdscr.addstr(5, 2, "UP/DOWN: select source, ENTER: confirm selection, b: back to player control")
-        stdscr.addstr(8, 2, "Select Streaming Source:")
-        for i, source in enumerate(active_player.streaming_sources):
+        stdscr.addstr(8, 2, "Select Source:")
+        for i, source in enumerate(active_player.sources):
             if i == selected_source_index:
                 stdscr.attron(curses.color_pair(2))
                 stdscr.addstr(9 + i, 4, f"> {source.text}")
@@ -270,10 +255,7 @@ class BlusoundCLI:
             if success:
                 self.update_player_status()
             self.update_header(title_win, message, "Player Control")
-        elif key == KEY_I:
-            self.input_selection_mode = True
-            self.selected_input_index = 0
-        elif key == ord('s'):
+        elif key == KEY_I or key == ord('s'):
             self.source_selection_mode = True
             self.selected_source_index = 0
         elif key == KEY_QUESTION:
@@ -283,38 +265,21 @@ class BlusoundCLI:
             self.update_header(title_win, f"{'Detailed' if self.detail_view else 'Summary'} view", "Player Control")
         return True, False
 
-    def handle_input_selection(self, key: int, title_win: curses.window) -> Tuple[bool, int]:
-        if key == KEY_B:
-            return False, self.selected_input_index
-        elif key == KEY_UP and self.selected_input_index > 0:
-            self.selected_input_index -= 1
-        elif key == KEY_DOWN and self.selected_input_index < len(self.active_player.inputs) - 1:
-            self.selected_input_index += 1
-        elif key == KEY_ENTER:
-            selected_input = self.active_player.inputs[self.selected_input_index]
-            self.update_header(title_win, f"Selecting input: {selected_input.text}", "Input Selection")
-            success, message = self.active_player.select_input(selected_input)
-            if success:
-                self.update_player_status()
-                return False, self.selected_input_index
-            self.update_header(title_win, message, "Input Selection")
-        return True, self.selected_input_index
-
-    def handle_streaming_source_selection(self, key: int, title_win: curses.window) -> Tuple[bool, int]:
+    def handle_source_selection(self, key: int, title_win: curses.window) -> Tuple[bool, int]:
         if key == KEY_B:
             return False, self.selected_source_index
         elif key == KEY_UP and self.selected_source_index > 0:
             self.selected_source_index -= 1
-        elif key == KEY_DOWN and self.selected_source_index < len(self.active_player.streaming_sources) - 1:
+        elif key == KEY_DOWN and self.selected_source_index < len(self.active_player.sources) - 1:
             self.selected_source_index += 1
         elif key == KEY_ENTER:
-            selected_source = self.active_player.streaming_sources[self.selected_source_index]
-            self.update_header(title_win, f"Selecting source: {selected_source.text}", "Streaming Source Selection")
+            selected_source = self.active_player.sources[self.selected_source_index]
+            self.update_header(title_win, f"Selecting source: {selected_source.text}", "Source Selection")
             success, message = self.active_player.select_input(selected_source)
             if success:
                 self.update_player_status()
                 return False, self.selected_source_index
-            self.update_header(title_win, message, "Streaming Source Selection")
+            self.update_header(title_win, message, "Source Selection")
         return True, self.selected_source_index
 
     def main(self, stdscr: curses.window):
@@ -340,15 +305,12 @@ class BlusoundCLI:
                 self.update_header(title_win, "", "Player Selection")
                 self.display_player_selection(stdscr)
             else:
-                if not self.input_selection_mode and not self.source_selection_mode:
+                if not self.source_selection_mode:
                     self.update_header(title_win, "", "Player Control", self.active_player)
                     self.display_player_control(stdscr)
-                elif self.input_selection_mode:
-                    self.update_header(title_win, "", "Input Selection", self.active_player)
-                    self.display_input_selection(stdscr)
                 else:
-                    self.update_header(title_win, "", "Streaming Source Selection", self.active_player)
-                    self.display_streaming_source_selection(stdscr)
+                    self.update_header(title_win, "", "Source Selection", self.active_player)
+                    self.display_source_selection(stdscr)
 
             stdscr.timeout(100)
             key = stdscr.getch()
@@ -367,12 +329,10 @@ class BlusoundCLI:
                 if self.shortcuts_open:
                     if key != -1:
                         self.shortcuts_open = False
-                elif not self.input_selection_mode and not self.source_selection_mode:
+                elif not self.source_selection_mode:
                     player_mode, _ = self.handle_player_control(key, title_win, stdscr)
-                elif self.input_selection_mode:
-                    self.input_selection_mode, _ = self.handle_input_selection(key, title_win)
                 else:
-                    self.source_selection_mode, _ = self.handle_streaming_source_selection(key, title_win)
+                    self.source_selection_mode, _ = self.handle_source_selection(key, title_win)
 
             current_time = time.time()
             if self.active_player and current_time - self.last_update_time >= 10:

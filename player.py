@@ -57,18 +57,7 @@ class PlayerStatus:
     secs: int = 0
 
 @dataclass
-class PlayerInput:
-    type_index: str
-    player_name: str
-    text: str
-    input_type: str
-    id: str
-    url: str
-    image: str
-    type: str
-
-@dataclass
-class StreamingSource:
+class PlayerSource:
     text: str
     image: str
     browse_key: Optional[str]
@@ -81,45 +70,19 @@ class BlusoundPlayer:
         self.host_name = host_name
         self.name = name
         self.base_url = f"http://{self.host_name}:11000"
-        self.inputs: List[PlayerInput] = []
-        self.streaming_sources: List[StreamingSource] = []
+        self.sources: List[PlayerSource] = []
         logger.info(f"Initialized BlusoundPlayer: {self.name} at {self.host_name}")
-        self.capture_inputs()
-        self.capture_streaming_sources()
+        self.capture_sources()
 
-    def capture_inputs(self) -> None:
-        url = f"{self.base_url}/RadioBrowse"
-        params = {'service': 'Capture'}
-        try:
-            response = requests.get(url, params=params)
-            response.raise_for_status()
-            root = ET.fromstring(response.text)
-            self.inputs = []
-            for item in root.findall('item'):
-                input_data = PlayerInput(
-                    type_index=item.get('typeIndex', ''),
-                    player_name=item.get('playerName', ''),
-                    text=item.get('text', ''),
-                    input_type=item.get('inputType', ''),
-                    id=item.get('id', ''),
-                    url=item.get('URL', ''),
-                    image=item.get('image', ''),
-                    type=item.get('type', '')
-                )
-                self.inputs.append(input_data)
-            logger.info(f"Captured {len(self.inputs)} inputs for {self.name}")
-        except requests.RequestException as e:
-            logger.error(f"Error capturing inputs for {self.name}: {str(e)}")
-
-    def capture_streaming_sources(self) -> None:
+    def capture_sources(self) -> None:
         url = f"{self.base_url}/Browse"
         try:
             response = requests.get(url)
             response.raise_for_status()
             root = ET.fromstring(response.text)
-            self.streaming_sources = []
+            self.sources = []
             for item in root.findall('item'):
-                source = StreamingSource(
+                source = PlayerSource(
                     text=item.get('text', ''),
                     image=item.get('image', ''),
                     browse_key=item.get('browseKey'),
@@ -127,10 +90,10 @@ class BlusoundPlayer:
                     input_type=item.get('inputType'),
                     type=item.get('type', '')
                 )
-                self.streaming_sources.append(source)
-            logger.info(f"Captured {len(self.streaming_sources)} streaming sources for {self.name}")
+                self.sources.append(source)
+            logger.info(f"Captured {len(self.sources)} sources for {self.name}")
         except requests.RequestException as e:
-            logger.error(f"Error capturing streaming sources for {self.name}: {str(e)}")
+            logger.error(f"Error capturing sources for {self.name}: {str(e)}")
 
     def get_status(self, timeout: Optional[int] = None, etag: Optional[str] = None) -> Tuple[bool, Union[PlayerStatus, str]]:
         url = f"{self.base_url}/Status"
@@ -245,20 +208,14 @@ class BlusoundPlayer:
             logger.error(f"Error going back a track on {self.name}: {str(e)}")
             return False, str(e)
 
-    def select_input(self, source: Union[PlayerInput, StreamingSource]) -> Tuple[bool, str]:
-        if isinstance(source, PlayerInput):
-            url = f"{self.base_url}/Play?url={source.url}"
-            logger.info(f"Selecting input for {self.name}: type={source.input_type}, index={source.type_index}")
-        elif isinstance(source, StreamingSource):
-            if source.play_url:
-                url = f"{self.base_url}{source.play_url}"
-            elif source.browse_key:
-                url = f"{self.base_url}/Browse?key={source.browse_key}"
-            else:
-                return False, "Invalid streaming source"
-            logger.info(f"Selecting streaming source for {self.name}: {source.text}")
+    def select_input(self, source: PlayerSource) -> Tuple[bool, str]:
+        if source.play_url:
+            url = f"{self.base_url}{source.play_url}"
+        elif source.browse_key:
+            url = f"{self.base_url}/Browse?key={source.browse_key}"
         else:
-            return False, "Invalid source type"
+            return False, "Invalid source"
+        logger.info(f"Selecting source for {self.name}: {source.text}")
 
         try:
             response = requests.get(url)
