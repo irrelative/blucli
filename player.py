@@ -5,7 +5,7 @@ import threading
 import logging
 from dataclasses import dataclass
 from zeroconf import ServiceBrowser, ServiceListener, Zeroconf
-from typing import List, Dict
+from typing import List, Dict, Tuple, Optional, Union
 import os
 
 # Ensure logs directory exists
@@ -48,7 +48,7 @@ class BlusoundPlayer:
         logger.info(f"Initialized BlusoundPlayer: {self.name} at {self.host_name}")
         self.capture_inputs()
 
-    def capture_inputs(self):
+    def capture_inputs(self) -> None:
         url = f"{self.base_url}/RadioBrowse"
         params = {'service': 'Capture'}
         try:
@@ -72,7 +72,7 @@ class BlusoundPlayer:
         except requests.RequestException as e:
             logger.error(f"Error capturing inputs for {self.name}: {str(e)}")
 
-    def get_status(self, timeout=None, etag=None):
+    def get_status(self, timeout: Optional[int] = None, etag: Optional[str] = None) -> Tuple[bool, Union[PlayerStatus, str]]:
         url = f"{self.base_url}/Status"
         params = {}
         if timeout:
@@ -113,7 +113,7 @@ class BlusoundPlayer:
             logger.error(f"Error getting status for {self.name}: {str(e)}")
             return False, str(e)
 
-    def set_volume(self, volume):
+    def set_volume(self, volume: int) -> Tuple[bool, str]:
         url = f"{self.base_url}/Volume"
         params = {'level': volume}
         logger.info(f"Setting volume for {self.name} to {volume}")
@@ -125,7 +125,7 @@ class BlusoundPlayer:
             logger.error(f"Error setting volume for {self.name}: {str(e)}")
             return False, str(e)
 
-    def play(self):
+    def play(self) -> Tuple[bool, str]:
         url = f"{self.base_url}/Play"
         logger.info(f"Playing {self.name}")
         try:
@@ -136,7 +136,7 @@ class BlusoundPlayer:
             logger.error(f"Error playing {self.name}: {str(e)}")
             return False, str(e)
 
-    def pause(self):
+    def pause(self) -> Tuple[bool, str]:
         url = f"{self.base_url}/Pause"
         logger.info(f"Pausing {self.name}")
         try:
@@ -147,7 +147,7 @@ class BlusoundPlayer:
             logger.error(f"Error pausing {self.name}: {str(e)}")
             return False, str(e)
 
-    def skip(self):
+    def skip(self) -> Tuple[bool, str]:
         url = f"{self.base_url}/Skip"
         logger.info(f"Skipping track on {self.name}")
         try:
@@ -158,7 +158,7 @@ class BlusoundPlayer:
             logger.error(f"Error skipping track on {self.name}: {str(e)}")
             return False, str(e)
 
-    def back(self):
+    def back(self) -> Tuple[bool, str]:
         url = f"{self.base_url}/Back"
         logger.info(f"Going back a track on {self.name}")
         try:
@@ -169,7 +169,7 @@ class BlusoundPlayer:
             logger.error(f"Error going back a track on {self.name}: {str(e)}")
             return False, str(e)
 
-    def select_input(self, input_type, index):
+    def select_input(self, input_type: str, index: str) -> Tuple[bool, str]:
         url = f"{self.base_url}/Play"
         params = {'inputType': input_type, 'index': index}
         logger.info(f"Selecting input for {self.name}: type={input_type}, index={index}")
