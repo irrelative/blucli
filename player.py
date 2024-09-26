@@ -170,11 +170,10 @@ class BlusoundPlayer:
             return False, str(e)
 
     def select_input(self, input_data: PlayerInput) -> Tuple[bool, str]:
-        url = f"{self.base_url}/Play"
-        params = {'inputType': input_data.input_type, 'index': input_data.type_index}
+        url = f"{self.base_url}/Play?url={input_data.url}"
         logger.info(f"Selecting input for {self.name}: type={input_data.input_type}, index={input_data.type_index}")
         try:
-            response = requests.get(url, params=params)
+            response = requests.get(url)
             response.raise_for_status()
             return True, "Input selected successfully"
         except requests.RequestException as e:
