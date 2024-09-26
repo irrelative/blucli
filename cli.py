@@ -303,11 +303,13 @@ class BlusoundCLI:
                 self.current_sources = self.current_sources[index].children
         elif key == KEY_RIGHT or key == KEY_ENTER:
             selected_source = self.current_sources[self.selected_source_index[-1]]
-            if selected_source.browse_key and not selected_source.children:
+            if selected_source.browse_key:
                 self.active_player.get_nested_sources(selected_source)
-            if selected_source.children:
-                self.current_sources = selected_source.children
-                self.selected_source_index.append(0)
+                if selected_source.children:
+                    self.current_sources = selected_source.children
+                    self.selected_source_index.append(0)
+                else:
+                    self.update_header(title_win, f"No nested sources found for: {selected_source.text}", "Source Selection")
             elif selected_source.play_url:
                 self.update_header(title_win, f"Selecting source: {selected_source.text}", "Source Selection")
                 success, message = self.active_player.select_input(selected_source)

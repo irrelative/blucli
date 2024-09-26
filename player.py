@@ -106,6 +106,8 @@ class BlusoundPlayer:
             nested_sources = self.capture_sources(source.browse_key)
             if nested_sources:
                 source.children = nested_sources
+                for child in source.children:
+                    self.get_nested_sources(child)
             else:
                 logger.warning(f"No nested sources found for {source.text}")
 
