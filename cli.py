@@ -323,7 +323,7 @@ def main(stdscr: curses.window) -> None:
             last_update_time = current_time
         
         # Refresh header
-        update_header(title_win, "")
+        update_header(title_win, "", "Player Selection" if not player_mode else "Player Control")
 
 if __name__ == "__main__":
     curses.wrapper(main)
