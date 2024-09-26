@@ -21,8 +21,8 @@ A CLI interface to control Blusound streamers.
 
 1. Clone this repository:
    ```
-   git clone https://github.com/yourusername/blusound-cli.git
-   cd blusound-cli
+   git clone https://github.com/irrelative/blucli.git
+   cd blucli
    ```
 
 2. Set up a virtual environment:
@@ -44,18 +44,6 @@ Run the script using:
 python cli.py
 ```
 
-## Controls
-
-* Use UP/DOWN arrows to navigate through menus and adjust volume
-* ENTER to select a player or confirm an action
-* 'p' or SPACE to play/pause
-* '>' to skip to the next track
-* '<' to go back to the previous track
-* 'i' to enter input selection mode
-* 'd' to toggle between summary and detailed view
-* '?' to show keyboard shortcuts
-* 'b' to go back to the player list
-* 'q' to quit the application
 
 ## Functionality
 
