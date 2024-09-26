@@ -76,7 +76,7 @@ def display_player_control(stdscr: curses.window, active_player: BlusoundPlayer,
         
         stdscr.addstr(15, 2, "Available Inputs:")
         for i, input_data in enumerate(active_player.inputs):
-            if player_status and input_data.id == player_status.inputId:
+            if status.inputId and input_data.id == status.inputId:
                 stdscr.attron(curses.color_pair(2))
                 stdscr.addstr(16 + i, 4, f"* {input_data.text} ({input_data.input_type})")
                 stdscr.attroff(curses.color_pair(2))
@@ -108,48 +108,48 @@ def handle_player_selection(key: int, selected_index: int, players: List[Blusoun
             return False, active_player, None
     return False, active_player, None
 
-def handle_player_control(key: int, active_player: BlusoundPlayer, player_status: PlayerStatus, title_win: curses.window, stdscr: curses.window) -> Tuple[bool, bool, Optional[PlayerStatus]]:
+def handle_player_control(key: int, active_player: BlusoundPlayer, player_status: Optional[Tuple[bool, Union[PlayerStatus, str]]], title_win: curses.window, stdscr: curses.window) -> Tuple[bool, bool, Optional[Tuple[bool, Union[PlayerStatus, str]]]]:
     new_status = None
     if key == KEY_B:
         return False, False, None
     elif key == KEY_UP:
         update_header(title_win, "Increasing volume...")
-        new_volume = min(100, player_status.volume + 5)
+        new_volume = min(100, player_status[1].volume + 5) if player_status and isinstance(player_status[1], PlayerStatus) else 5
         success, message = active_player.set_volume(new_volume)
         if success:
-            success, new_status = active_player.get_status()
-            if success:
+            new_status = active_player.get_status()
+            if new_status[0]:
                 display_player_control(stdscr, active_player, new_status)
         update_header(title_win, message)
     elif key == KEY_DOWN:
         update_header(title_win, "Decreasing volume...")
-        new_volume = max(0, player_status.volume - 5)
+        new_volume = max(0, player_status[1].volume - 5) if player_status and isinstance(player_status[1], PlayerStatus) else 0
         success, message = active_player.set_volume(new_volume)
         if success:
-            success, new_status = active_player.get_status()
-            if success:
+            new_status = active_player.get_status()
+            if new_status[0]:
                 display_player_control(stdscr, active_player, new_status)
         update_header(title_win, message)
     elif (key == ord('p') or key == KEY_SPACE) and active_player:
         update_header(title_win, "Toggling play/pause...")
-        if player_status and player_status.state == "play":
+        if player_status and isinstance(player_status[1], PlayerStatus) and player_status[1].state == "play":
             success, message = active_player.pause()
         else:
             success, message = active_player.play()
         if success:
-            success, new_status = active_player.get_status()
+            new_status = active_player.get_status()
         update_header(title_win, message)
     elif key == ord('>') and active_player:
         update_header(title_win, "Skipping to next track...")
         success, message = active_player.skip()
         if success:
-            success, new_status = active_player.get_status()
+            new_status = active_player.get_status()
         update_header(title_win, message)
     elif key == ord('<') and active_player:
         update_header(title_win, "Going to previous track...")
         success, message = active_player.back()
         if success:
-            success, new_status = active_player.get_status()
+            new_status = active_player.get_status()
         update_header(title_win, message)
     elif key == KEY_I:
         return True, True, None
@@ -228,15 +228,15 @@ def main(stdscr: curses.window) -> None:
                 stdscr.addstr(height - 2, 2, "Error: Unable to connect to the player", curses.A_BOLD)
         else:
             if not input_selection_mode:
-                player_mode, input_selection_mode, new_status = handle_player_control(key, active_player, player_status[1] if player_status and isinstance(player_status[1], PlayerStatus) else None, title_win, stdscr)
+                player_mode, input_selection_mode, new_status = handle_player_control(key, active_player, player_status, title_win, stdscr)
                 if new_status:
-                    player_status = (True, new_status)
+                    player_status = new_status
                 if input_selection_mode:
                     selected_input_index = 0
             else:
                 input_selection_mode, selected_input_index, new_status = handle_input_selection(key, active_player, selected_input_index, title_win)
                 if new_status:
-                    player_status = (True, new_status)
+                    player_status = new_status
 
         # Update player status every 10 seconds
         current_time = time.time()
