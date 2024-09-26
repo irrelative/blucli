@@ -62,16 +62,17 @@ def display_player_selection(stdscr: curses.window, players: List[BlusoundPlayer
         if i == selected_index:
             stdscr.attroff(curses.color_pair(2))
 
-def display_player_control(stdscr: curses.window, active_player: BlusoundPlayer, player_status: Optional[PlayerStatus]) -> None:
+def display_player_control(stdscr: curses.window, active_player: BlusoundPlayer, player_status: Optional[Tuple[bool, Union[PlayerStatus, str]]]) -> None:
     stdscr.addstr(5, 2, "UP/DOWN: volume, p/SPACE: play/pause, >/<: skip/back, i: select input, b: back to player list, q: quit")
-    if active_player and player_status:
+    if active_player and player_status and isinstance(player_status[1], PlayerStatus):
+        status = player_status[1]
         stdscr.addstr(8, 2, f"Active Player: {active_player.name}")
-        stdscr.addstr(9, 2, f"Status: {player_status.state}")
-        volume_bar = create_volume_bar(player_status.volume)
-        stdscr.addstr(10, 2, f"Volume: {volume_bar} {player_status.volume}%")
-        stdscr.addstr(11, 2, f"Now Playing: {player_status.name} - {player_status.artist}")
-        stdscr.addstr(12, 2, f"Album: {player_status.album}")
-        stdscr.addstr(13, 2, f"Service: {player_status.service}")
+        stdscr.addstr(9, 2, f"Status: {status.state}")
+        volume_bar = create_volume_bar(status.volume)
+        stdscr.addstr(10, 2, f"Volume: {volume_bar} {status.volume}%")
+        stdscr.addstr(11, 2, f"Now Playing: {status.name} - {status.artist}")
+        stdscr.addstr(12, 2, f"Album: {status.album}")
+        stdscr.addstr(13, 2, f"Service: {status.service}")
         
         stdscr.addstr(15, 2, "Available Inputs:")
         for i, input_data in enumerate(active_player.inputs):
@@ -197,6 +198,7 @@ def main(stdscr: curses.window) -> None:
     active_player: Optional[BlusoundPlayer] = None
     player_mode: bool = False
     last_update_time: float = 0.0
+    player_status: Optional[Tuple[bool, Union[PlayerStatus, str]]] = None
 
     # Main loop
     while True:
@@ -221,20 +223,20 @@ def main(stdscr: curses.window) -> None:
         elif not player_mode:
             player_mode, active_player, new_status = handle_player_selection(key, selected_index, players, active_player)
             if new_status:
-                player_status = new_status
+                player_status = (True, new_status)
             elif active_player is None:
                 stdscr.addstr(height - 2, 2, "Error: Unable to connect to the player", curses.A_BOLD)
         else:
             if not input_selection_mode:
-                player_mode, input_selection_mode, new_status = handle_player_control(key, active_player, player_status, title_win, stdscr)
+                player_mode, input_selection_mode, new_status = handle_player_control(key, active_player, player_status[1] if player_status and isinstance(player_status[1], PlayerStatus) else None, title_win, stdscr)
                 if new_status:
-                    player_status = new_status
+                    player_status = (True, new_status)
                 if input_selection_mode:
                     selected_input_index = 0
             else:
                 input_selection_mode, selected_input_index, new_status = handle_input_selection(key, active_player, selected_input_index, title_win)
                 if new_status:
-                    player_status = new_status
+                    player_status = (True, new_status)
 
         # Update player status every 10 seconds
         current_time = time.time()
