@@ -68,25 +68,25 @@ def display_player_selection(stdscr: curses.window, players: List[BlusoundPlayer
 def display_player_control(stdscr: curses.window, active_player: BlusoundPlayer, player_status: Optional[PlayerStatus], show_shortcuts: bool) -> None:
     if show_shortcuts:
         display_shortcuts(stdscr)
-    else:
-        stdscr.addstr(5, 2, "UP/DOWN: volume, p/SPACE: play/pause, >/<: skip/back, i: select input, b: back to player list, ?: show shortcuts, q: quit")
-        if active_player and isinstance(player_status, PlayerStatus):
-            stdscr.addstr(8, 2, f"Active Player: {active_player.name}")
-            stdscr.addstr(9, 2, f"Status: {player_status.state}")
-            volume_bar = create_volume_bar(player_status.volume)
-            stdscr.addstr(10, 2, f"Volume: {volume_bar} {player_status.volume}%")
-            stdscr.addstr(11, 2, f"Now Playing: {player_status.name} - {player_status.artist}")
-            stdscr.addstr(12, 2, f"Album: {player_status.album}")
-            stdscr.addstr(13, 2, f"Service: {player_status.service}")
-            
-            stdscr.addstr(15, 2, "Available Inputs:")
-            for i, input_data in enumerate(active_player.inputs):
-                if player_status.inputId and input_data.id == player_status.inputId:
-                    stdscr.attron(curses.color_pair(2))
-                    stdscr.addstr(16 + i, 4, f"* {input_data.text} ({input_data.input_type})")
-                    stdscr.attroff(curses.color_pair(2))
-                else:
-                    stdscr.addstr(16 + i, 4, f"  {input_data.text} ({input_data.input_type})")
+    elif active_player and isinstance(player_status, PlayerStatus):
+        stdscr.addstr(5, 2, f"Active Player: {active_player.name}")
+        stdscr.addstr(6, 2, f"Status: {player_status.state}")
+        volume_bar = create_volume_bar(player_status.volume)
+        stdscr.addstr(7, 2, f"Volume: {volume_bar} {player_status.volume}%")
+        stdscr.addstr(8, 2, f"Now Playing: {player_status.name} - {player_status.artist}")
+        stdscr.addstr(9, 2, f"Album: {player_status.album}")
+        stdscr.addstr(10, 2, f"Service: {player_status.service}")
+        
+        stdscr.addstr(12, 2, "Available Inputs:")
+        for i, input_data in enumerate(active_player.inputs):
+            if player_status.inputId and input_data.id == player_status.inputId:
+                stdscr.attron(curses.color_pair(2))
+                stdscr.addstr(13 + i, 4, f"* {input_data.text} ({input_data.input_type})")
+                stdscr.attroff(curses.color_pair(2))
+            else:
+                stdscr.addstr(13 + i, 4, f"  {input_data.text} ({input_data.input_type})")
+        
+        stdscr.addstr(stdscr.getmaxyx()[0] - 1, 2, "Press '?' to show keyboard shortcuts")
 
 def display_shortcuts(stdscr: curses.window) -> None:
     height, width = stdscr.getmaxyx()
