@@ -2,7 +2,7 @@ import curses
 import time
 import threading
 import requests
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from player import BlusoundPlayer, PlayerStatus, threaded_discover
 
 def create_volume_bar(volume, width=20):
@@ -42,7 +42,7 @@ def update_player_status(active_player):
         except requests.RequestException:
             pass
 
-def display_player_selection(stdscr, players, selected_index, active_player):
+def display_player_selection(stdscr: curses.window, players: List[BlusoundPlayer], selected_index: int, active_player: Optional[BlusoundPlayer]) -> None:
     stdscr.addstr(5, 2, "Use UP/DOWN arrows to select, ENTER to activate, 'q' to quit")
     stdscr.addstr(8, 2, "Discovered Blusound players:")
     for i, player in enumerate(players):
@@ -55,7 +55,7 @@ def display_player_selection(stdscr, players, selected_index, active_player):
         if i == selected_index:
             stdscr.attroff(curses.color_pair(2))
 
-def display_player_control(stdscr, active_player, player_status):
+def display_player_control(stdscr: curses.window, active_player: BlusoundPlayer, player_status: Optional[PlayerStatus]) -> None:
     stdscr.addstr(5, 2, "UP/DOWN: volume, p/SPACE: play/pause, >/<: skip/back, i: select input, b: back to player list, q: quit")
     if active_player and player_status:
         stdscr.addstr(8, 2, f"Active Player: {active_player.name}")
@@ -75,7 +75,7 @@ def display_player_control(stdscr, active_player, player_status):
             else:
                 stdscr.addstr(16 + i, 4, f"  {input_data.text} ({input_data.input_type})")
 
-def display_input_selection(stdscr, active_player, selected_input_index):
+def display_input_selection(stdscr: curses.window, active_player: BlusoundPlayer, selected_input_index: int) -> None:
     stdscr.addstr(5, 2, "UP/DOWN: select input, ENTER: confirm selection, b: back to player control")
     stdscr.addstr(8, 2, "Select Input:")
     for i, input_data in enumerate(active_player.inputs):
@@ -86,7 +86,7 @@ def display_input_selection(stdscr, active_player, selected_input_index):
         else:
             stdscr.addstr(9 + i, 4, f"  {input_data.text} ({input_data.input_type})")
 
-def handle_player_selection(key, selected_index, players, active_player):
+def handle_player_selection(key: int, selected_index: int, players: List[BlusoundPlayer], active_player: Optional[BlusoundPlayer]) -> Tuple[bool, Optional[BlusoundPlayer], Optional[PlayerStatus]]:
     if key == KEY_UP and selected_index > 0:
         selected_index -= 1
     elif key == KEY_DOWN and selected_index < len(players) - 1:
@@ -100,7 +100,7 @@ def handle_player_selection(key, selected_index, players, active_player):
             return False, active_player, None
     return False, active_player, None
 
-def handle_player_control(key, active_player, player_status, title_win):
+def handle_player_control(key: int, active_player: BlusoundPlayer, player_status: PlayerStatus, title_win: curses.window) -> Tuple[bool, bool]:
     if key == KEY_B:
         return False, False
     elif key == KEY_UP:
@@ -152,7 +152,7 @@ def handle_player_control(key, active_player, player_status, title_win):
         return True, True
     return True, False
 
-def handle_input_selection(key, active_player, selected_input_index, title_win):
+def handle_input_selection(key: int, active_player: BlusoundPlayer, selected_input_index: int, title_win: curses.window) -> bool:
     if key == KEY_B:
         return False
     elif key == KEY_UP and selected_input_index > 0:
