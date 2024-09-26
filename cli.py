@@ -164,7 +164,7 @@ def handle_input_selection(key: int, active_player: BlusoundPlayer, selected_inp
     elif key == KEY_ENTER:
         selected_input = active_player.inputs[selected_input_index]
         update_header(title_win, f"Selecting input: {selected_input.text}")
-        success, message = active_player.select_input(selected_input.input_type, selected_input.type_index)
+        success, message = active_player.select_input(selected_input)
         if success:
             success, new_status = active_player.get_status()
             if success:

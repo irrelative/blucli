@@ -169,10 +169,10 @@ class BlusoundPlayer:
             logger.error(f"Error going back a track on {self.name}: {str(e)}")
             return False, str(e)
 
-    def select_input(self, input_type: str, index: str) -> Tuple[bool, str]:
+    def select_input(self, input_data: PlayerInput) -> Tuple[bool, str]:
         url = f"{self.base_url}/Play"
-        params = {'inputType': input_type, 'index': index}
-        logger.info(f"Selecting input for {self.name}: type={input_type}, index={index}")
+        params = {'inputType': input_data.input_type, 'index': input_data.type_index}
+        logger.info(f"Selecting input for {self.name}: type={input_data.input_type}, index={input_data.type_index}")
         try:
             response = requests.get(url, params=params)
             response.raise_for_status()
