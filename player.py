@@ -179,26 +179,15 @@ class BlusoundPlayer:
             logger.error(f"Error setting volume for {self.name}: {str(e)}")
             return False, str(e)
 
-    def play(self) -> Tuple[bool, str]:
-        url = f"{self.base_url}/Play"
-        logger.info(f"Playing {self.name}")
+    def toggle_play_pause(self) -> Tuple[bool, str]:
+        url = f"{self.base_url}/Pause?toggle=1"
+        logger.info(f"Toggling play/pause for {self.name}")
         try:
             response = requests.get(url)
             response.raise_for_status()
-            return True, "Playback started successfully"
+            return True, "Playback toggled successfully"
         except requests.RequestException as e:
-            logger.error(f"Error playing {self.name}: {str(e)}")
-            return False, str(e)
-
-    def pause(self) -> Tuple[bool, str]:
-        url = f"{self.base_url}/Pause"
-        logger.info(f"Pausing {self.name}")
-        try:
-            response = requests.get(url)
-            response.raise_for_status()
-            return True, "Playback paused successfully"
-        except requests.RequestException as e:
-            logger.error(f"Error pausing {self.name}: {str(e)}")
+            logger.error(f"Error toggling play/pause for {self.name}: {str(e)}")
             return False, str(e)
 
     def skip(self) -> Tuple[bool, str]:

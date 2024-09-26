@@ -238,10 +238,7 @@ class BlusoundCLI:
             self.update_header(title_win, message, "Player Control")
         elif (key == KEY_P or key == KEY_SPACE) and self.active_player:
             self.update_header(title_win, "Toggling play/pause...", "Player Control")
-            if self.player_status and self.player_status.state == "play":
-                success, message = self.active_player.pause()
-            else:
-                success, message = self.active_player.play()
+            success, message = self.active_player.toggle_play_pause()
             if success:
                 self.update_player_status()
             self.update_header(title_win, message, "Player Control")
