@@ -81,72 +81,105 @@ class BlusoundPlayer:
             params['etag'] = etag
 
         logger.debug(f"Getting status for {self.name}")
-        response = requests.get(url, params=params)
-        response.raise_for_status()
+        try:
+            response = requests.get(url, params=params)
+            response.raise_for_status()
+            logger.info(f"Got status for {self.name}: {response.text}")
+            root = ET.fromstring(response.text)
+            
+            def safe_find(element, tag, default=''):
+                found = element.find(tag)
+                return found.text if found is not None else default
 
-        logger.info(f"Got status for {self.name}: {response.text}")
-        root = ET.fromstring(response.text)
-        
-        def safe_find(element, tag, default=''):
-            found = element.find(tag)
-            return found.text if found is not None else default
+            def safe_int(value, default=0):
+                try:
+                    return int(value)
+                except (ValueError, TypeError):
+                    return default
 
-        def safe_int(value, default=0):
-            try:
-                return int(value)
-            except (ValueError, TypeError):
-                return default
-
-        status = PlayerStatus(
-            etag=root.get('etag', ''),
-            album=safe_find(root, 'album'),
-            artist=safe_find(root, 'artist'),
-            name=safe_find(root, 'title1'),  # Changed from 'name' to 'title1'
-            state=safe_find(root, 'state'),
-            volume=safe_int(safe_find(root, 'volume')),
-            service=safe_find(root, 'service'),
-            inputId=safe_find(root, 'inputId')
-        )
-        logger.info(f"Status for {self.name}: {status}")
-        return status
+            status = PlayerStatus(
+                etag=root.get('etag', ''),
+                album=safe_find(root, 'album'),
+                artist=safe_find(root, 'artist'),
+                name=safe_find(root, 'title1'),
+                state=safe_find(root, 'state'),
+                volume=safe_int(safe_find(root, 'volume')),
+                service=safe_find(root, 'service'),
+                inputId=safe_find(root, 'inputId')
+            )
+            logger.info(f"Status for {self.name}: {status}")
+            return True, status
+        except requests.RequestException as e:
+            logger.error(f"Error getting status for {self.name}: {str(e)}")
+            return False, str(e)
 
     def set_volume(self, volume):
         url = f"{self.base_url}/Volume"
         params = {'level': volume}
         logger.info(f"Setting volume for {self.name} to {volume}")
-        response = requests.get(url, params=params)
-        response.raise_for_status()
+        try:
+            response = requests.get(url, params=params)
+            response.raise_for_status()
+            return True, "Volume set successfully"
+        except requests.RequestException as e:
+            logger.error(f"Error setting volume for {self.name}: {str(e)}")
+            return False, str(e)
 
     def play(self):
         url = f"{self.base_url}/Play"
         logger.info(f"Playing {self.name}")
-        response = requests.get(url)
-        response.raise_for_status()
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            return True, "Playback started successfully"
+        except requests.RequestException as e:
+            logger.error(f"Error playing {self.name}: {str(e)}")
+            return False, str(e)
 
     def pause(self):
         url = f"{self.base_url}/Pause"
         logger.info(f"Pausing {self.name}")
-        response = requests.get(url)
-        response.raise_for_status()
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            return True, "Playback paused successfully"
+        except requests.RequestException as e:
+            logger.error(f"Error pausing {self.name}: {str(e)}")
+            return False, str(e)
 
     def skip(self):
         url = f"{self.base_url}/Skip"
         logger.info(f"Skipping track on {self.name}")
-        response = requests.get(url)
-        response.raise_for_status()
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            return True, "Skipped to next track successfully"
+        except requests.RequestException as e:
+            logger.error(f"Error skipping track on {self.name}: {str(e)}")
+            return False, str(e)
 
     def back(self):
         url = f"{self.base_url}/Back"
         logger.info(f"Going back a track on {self.name}")
-        response = requests.get(url)
-        response.raise_for_status()
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            return True, "Went back to previous track successfully"
+        except requests.RequestException as e:
+            logger.error(f"Error going back a track on {self.name}: {str(e)}")
+            return False, str(e)
 
     def select_input(self, input_type, index):
         url = f"{self.base_url}/Play"
         params = {'inputType': input_type, 'index': index}
         logger.info(f"Selecting input for {self.name}: type={input_type}, index={index}")
-        response = requests.get(url, params=params)
-        response.raise_for_status()
+        try:
+            response = requests.get(url, params=params)
+            response.raise_for_status()
+            return True, "Input selected successfully"
+        except requests.RequestException as e:
+            logger.error(f"Error selecting input for {self.name}: {str(e)}")
+            return False, str(e)
 
 class MyListener(ServiceListener):
     def __init__(self):
