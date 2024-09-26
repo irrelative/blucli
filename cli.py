@@ -129,9 +129,9 @@ class BlusoundCLI:
         stdscr.addstr(8, 2, f"{'Album:':<{max_label_width + 1}} {player_status.album}")
         stdscr.addstr(9, 2, f"{'Service:':<{max_label_width + 1}} {player_status.service}")
 
-        active_input = next((input_data for input_data in active_player.inputs if input_data.id == player_status.inputId), None)
-        if active_input:
-            stdscr.addstr(10, 2, f"{'Active Input:':<{max_label_width + 1}} {active_input.text} ({active_input.input_type})")
+        active_source = next((source for source in active_player.sources if source.input_type == player_status.inputId), None)
+        if active_source:
+            stdscr.addstr(10, 2, f"{'Active Input:':<{max_label_width + 1}} {active_source.text} ({active_source.input_type})")
         else:
             stdscr.addstr(10, 2, f"{'Active Input:':<{max_label_width + 1}} No active input")
 
