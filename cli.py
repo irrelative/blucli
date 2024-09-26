@@ -35,7 +35,7 @@ class BlusoundCLI:
         self.shortcuts_open: bool = False
         self.selector_shortcuts_open: bool = False
         self.source_selection_mode: bool = False
-        self.selected_source_index: List[int] = [0]
+        self.selected_source_index: List[int] = []
         self.player_status: Optional[PlayerStatus] = None
         self.detail_view: bool = False
         self.selected_index: int = 0
@@ -192,7 +192,7 @@ class BlusoundCLI:
             expand_indicator = "+" if source.browse_key else " "
             stdscr.addstr(9 + i, 4, f"{indent}{prefix} {expand_indicator} {source.text}")
 
-        if self.selected_source_index[-1] < len(self.current_sources):
+        if self.selected_source_index and self.selected_source_index[-1] < len(self.current_sources):
             selected_source = self.current_sources[self.selected_source_index[-1]]
             if selected_source.browse_key:
                 active_player.get_nested_sources(selected_source)
@@ -264,7 +264,7 @@ class BlusoundCLI:
             self.update_header(title_win, message, "Player Control")
         elif key == KEY_I or key == ord('s'):
             self.source_selection_mode = True
-            self.selected_source_index = 0
+            self.selected_source_index = [0]
         elif key == KEY_QUESTION:
             self.shortcuts_open = not self.shortcuts_open
         elif key == KEY_D:
@@ -275,9 +275,9 @@ class BlusoundCLI:
     def handle_source_selection(self, key: int, title_win: curses.window) -> Tuple[bool, List[int]]:
         if key == KEY_B:
             return False, self.selected_source_index
-        elif key == KEY_UP and self.selected_source_index[-1] > 0:
+        elif key == KEY_UP and self.selected_source_index and self.selected_source_index[-1] > 0:
             self.selected_source_index[-1] -= 1
-        elif key == KEY_DOWN and self.selected_source_index[-1] < len(self.current_sources) - 1:
+        elif key == KEY_DOWN and self.selected_source_index and self.selected_source_index[-1] < len(self.current_sources) - 1:
             self.selected_source_index[-1] += 1
         elif key == KEY_LEFT and len(self.selected_source_index) > 1:
             self.selected_source_index.pop()
