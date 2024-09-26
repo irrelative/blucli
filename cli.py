@@ -277,8 +277,12 @@ class BlusoundCLI:
     def pretty_print_player_state(self, stdscr: curses.window):
         if self.active_player and self.player_status:
             player_state = {
-                "name": self.active_player.name,
-                "host": self.active_player.host_name,
+                "player": {
+                    "name": self.active_player.name,
+                    "host_name": self.active_player.host_name,
+                    "base_url": self.active_player.base_url,
+                    "sources": [source.__dict__ for source in self.active_player.sources]
+                },
                 "status": self.player_status.__dict__
             }
             pretty_state = json.dumps(player_state, indent=2)
