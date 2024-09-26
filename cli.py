@@ -98,12 +98,15 @@ def display_player_control(stdscr: curses.window, active_player: BlusoundPlayer,
     if show_shortcuts:
         display_shortcuts(stdscr)
     elif active_player and isinstance(player_status, PlayerStatus):
-        stdscr.addstr(5, 2, f"Status: {player_status.state}")
+        labels = ["Status", "Volume", "Now Playing", "Album", "Service"]
+        max_label_width = max(len(label) for label in labels)
+        
+        stdscr.addstr(5, 2, f"{'Status:':<{max_label_width + 1}} {player_status.state}")
         volume_bar = create_volume_bar(player_status.volume)
-        stdscr.addstr(6, 2, f"Volume: {volume_bar} {player_status.volume}%")
-        stdscr.addstr(7, 2, f"Now Playing: {player_status.name} - {player_status.artist}")
-        stdscr.addstr(8, 2, f"Album: {player_status.album}")
-        stdscr.addstr(9, 2, f"Service: {player_status.service}")
+        stdscr.addstr(6, 2, f"{'Volume:':<{max_label_width + 1}} {volume_bar} {player_status.volume}%")
+        stdscr.addstr(7, 2, f"{'Now Playing:':<{max_label_width + 1}} {player_status.name} - {player_status.artist}")
+        stdscr.addstr(8, 2, f"{'Album:':<{max_label_width + 1}} {player_status.album}")
+        stdscr.addstr(9, 2, f"{'Service:':<{max_label_width + 1}} {player_status.service}")
         
         stdscr.addstr(12, 2, "Active Input:")
         active_input = next((input_data for input_data in active_player.inputs if input_data.id == player_status.inputId), None)
