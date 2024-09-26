@@ -75,7 +75,7 @@ def display_player_control(stdscr: curses.window, active_player: BlusoundPlayer,
         
         stdscr.addstr(15, 2, "Available Inputs:")
         for i, input_data in enumerate(active_player.inputs):
-            if status.inputId and input_data.id == status.inputId:
+            if player_status.inputId and input_data.id == player_status.inputId:
                 stdscr.attron(curses.color_pair(2))
                 stdscr.addstr(16 + i, 4, f"* {input_data.text} ({input_data.input_type})")
                 stdscr.attroff(curses.color_pair(2))
