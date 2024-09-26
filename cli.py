@@ -34,15 +34,18 @@ input_selection_mode: bool = False
 selected_input_index: int = 0
 player_status: Optional[PlayerStatus] = None
 
-def update_header(title_win, message, view):
+def update_header(title_win, message, view, active_player=None):
     global header_message, header_message_time
     title_win.clear()
-    title_win.addstr(1, 2, f"Blusound CLI - {view}", curses.A_BOLD)
+    header = f"Blusound CLI - {view}"
+    if active_player:
+        header += f" - {active_player.name}"
+    title_win.addstr(1, 2, header, curses.A_BOLD)
     if message:
         header_message = message
         header_message_time = time.time()
     if time.time() - header_message_time < 2:
-        title_win.addstr(1, len(f"Blusound CLI - {view}") + 4, f"- {header_message}")
+        title_win.addstr(1, len(header) + 4, f"- {header_message}")
     title_win.refresh()
 
 def update_player_status(active_player):
@@ -95,13 +98,12 @@ def display_player_control(stdscr: curses.window, active_player: BlusoundPlayer,
     if show_shortcuts:
         display_shortcuts(stdscr)
     elif active_player and isinstance(player_status, PlayerStatus):
-        stdscr.addstr(5, 2, f"Active Player: {active_player.name}")
-        stdscr.addstr(6, 2, f"Status: {player_status.state}")
+        stdscr.addstr(5, 2, f"Status: {player_status.state}")
         volume_bar = create_volume_bar(player_status.volume)
-        stdscr.addstr(7, 2, f"Volume: {volume_bar} {player_status.volume}%")
-        stdscr.addstr(8, 2, f"Now Playing: {player_status.name} - {player_status.artist}")
-        stdscr.addstr(9, 2, f"Album: {player_status.album}")
-        stdscr.addstr(10, 2, f"Service: {player_status.service}")
+        stdscr.addstr(6, 2, f"Volume: {volume_bar} {player_status.volume}%")
+        stdscr.addstr(7, 2, f"Now Playing: {player_status.name} - {player_status.artist}")
+        stdscr.addstr(8, 2, f"Album: {player_status.album}")
+        stdscr.addstr(9, 2, f"Service: {player_status.service}")
         
         stdscr.addstr(12, 2, "Active Input:")
         active_input = next((input_data for input_data in active_player.inputs if input_data.id == player_status.inputId), None)
@@ -277,10 +279,10 @@ def main(stdscr: curses.window) -> None:
             display_player_selection(stdscr, players, selected_index, active_player, selector_shortcuts_open)
         else:
             if not input_selection_mode:
-                update_header(title_win, "", "Player Control")
+                update_header(title_win, "", "Player Control", active_player)
                 display_player_control(stdscr, active_player, player_status, shortcuts_open)
             else:
-                update_header(title_win, "", "Input Selection")
+                update_header(title_win, "", "Input Selection", active_player)
                 display_input_selection(stdscr, active_player, selected_input_index)
 
         # Get user input
