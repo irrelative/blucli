@@ -59,7 +59,11 @@ class BlusoundCLI:
     def update_player_status(self):
         if self.active_player:
             try:
-                self.player_status = self.active_player.get_status()
+                success, status = self.active_player.get_status()
+                if success:
+                    self.player_status = status
+                else:
+                    logger.error(f"Error updating player status: {status}")
             except requests.RequestException as e:
                 logger.error(f"Error updating player status: {e}")
 
@@ -195,8 +199,15 @@ class BlusoundCLI:
         elif key == KEY_ENTER and self.players:
             self.active_player = self.players[self.selected_index]
             try:
-                self.player_status = self.active_player.get_status()
-                return True, self.active_player, False
+                success, status = self.active_player.get_status()
+                if success:
+                    self.player_status = status
+                    return True, self.active_player, False
+                else:
+                    logger.error(f"Error getting player status: {status}")
+                    self.active_player = None
+                    self.player_status = None
+                    return False, None, False
             except requests.RequestException as e:
                 logger.error(f"Error connecting to the player: {e}")
                 self.active_player = None
@@ -314,6 +325,8 @@ class BlusoundCLI:
                         self.selector_shortcuts_open = False
                 else:
                     player_mode, self.active_player, _ = self.handle_player_selection(key)
+                    if player_mode:
+                        self.update_player_status()
             else:
                 if self.shortcuts_open:
                     if key != -1:
