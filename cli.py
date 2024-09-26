@@ -57,18 +57,17 @@ def display_player_selection(stdscr: curses.window, players: List[BlusoundPlayer
     if selector_shortcuts_open:
         display_selector_shortcuts(stdscr)
     else:
-        stdscr.addstr(5, 2, "Use UP/DOWN arrows to select, ENTER to activate, 'q' to quit")
-        stdscr.addstr(7, 2, "Press '?' to show keyboard shortcuts")
-        stdscr.addstr(9, 2, "Discovered Blusound players:")
+        stdscr.addstr(5, 2, "Discovered Blusound players:")
         for i, player in enumerate(players):
             if i == selected_index:
                 stdscr.attron(curses.color_pair(2))
             if player == active_player:
-                stdscr.addstr(10 + i, 4, f"* {player.name} ({player.host_name})")
+                stdscr.addstr(6 + i, 4, f"* {player.name} ({player.host_name})")
             else:
-                stdscr.addstr(10 + i, 4, f"  {player.name} ({player.host_name})")
+                stdscr.addstr(6 + i, 4, f"  {player.name} ({player.host_name})")
             if i == selected_index:
                 stdscr.attroff(curses.color_pair(2))
+        stdscr.addstr(stdscr.getmaxyx()[0] - 1, 2, "Press '?' to show keyboard shortcuts")
 
 def display_selector_shortcuts(stdscr: curses.window) -> None:
     height, width = stdscr.getmaxyx()
