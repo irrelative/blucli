@@ -2,7 +2,7 @@ import curses
 import time
 import requests
 from typing import List, Optional, Tuple
-from player import BlusoundPlayer, PlayerStatus, PlayerInput, StreamingSource, threaded_discover
+from player import BlusoundPlayer, PlayerStatus, threaded_discover
 import logging
 
 # Set up logging
