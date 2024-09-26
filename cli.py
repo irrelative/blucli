@@ -1,7 +1,7 @@
 import curses
 import time
 import requests
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 from player import BlusoundPlayer, PlayerStatus, threaded_discover
 import logging
 
@@ -174,7 +174,7 @@ def handle_input_selection(key: int, active_player: BlusoundPlayer, selected_inp
     return True, selected_input_index, None
 
 def main(stdscr: curses.window) -> None:
-    global player_status, input_selection_mode, selected_input_index
+    global input_selection_mode, selected_input_index
 
     # Clear screen and initialize
     stdscr.clear()
