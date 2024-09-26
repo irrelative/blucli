@@ -362,7 +362,7 @@ class BlusoundCLI:
 
             if key == ord('q'):
                 break
-            elif self.pretty_print_active:
+            elif key != -1 and self.pretty_print_active:
                 self.pretty_print_active = False
             elif not player_mode:
                 if self.selector_shortcuts_open:
