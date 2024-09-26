@@ -28,6 +28,7 @@ KEY_QUESTION = ord('?')
 header_message: str = ""
 show_shortcuts: bool = False
 shortcuts_open: bool = False
+selector_shortcuts_open: bool = False
 header_message_time: float = 0
 input_selection_mode: bool = False
 selected_input_index: int = 0
@@ -52,18 +53,44 @@ def update_player_status(active_player):
         except requests.RequestException:
             pass
 
-def display_player_selection(stdscr: curses.window, players: List[BlusoundPlayer], selected_index: int, active_player: Optional[BlusoundPlayer]) -> None:
-    stdscr.addstr(5, 2, "Use UP/DOWN arrows to select, ENTER to activate, 'q' to quit")
-    stdscr.addstr(8, 2, "Discovered Blusound players:")
-    for i, player in enumerate(players):
-        if i == selected_index:
-            stdscr.attron(curses.color_pair(2))
-        if player == active_player:
-            stdscr.addstr(9 + i, 4, f"* {player.name} ({player.host_name})")
-        else:
-            stdscr.addstr(9 + i, 4, f"  {player.name} ({player.host_name})")
-        if i == selected_index:
-            stdscr.attroff(curses.color_pair(2))
+def display_player_selection(stdscr: curses.window, players: List[BlusoundPlayer], selected_index: int, active_player: Optional[BlusoundPlayer], selector_shortcuts_open: bool) -> None:
+    if selector_shortcuts_open:
+        display_selector_shortcuts(stdscr)
+    else:
+        stdscr.addstr(5, 2, "Use UP/DOWN arrows to select, ENTER to activate, 'q' to quit")
+        stdscr.addstr(7, 2, "Press '?' to show keyboard shortcuts")
+        stdscr.addstr(9, 2, "Discovered Blusound players:")
+        for i, player in enumerate(players):
+            if i == selected_index:
+                stdscr.attron(curses.color_pair(2))
+            if player == active_player:
+                stdscr.addstr(10 + i, 4, f"* {player.name} ({player.host_name})")
+            else:
+                stdscr.addstr(10 + i, 4, f"  {player.name} ({player.host_name})")
+            if i == selected_index:
+                stdscr.attroff(curses.color_pair(2))
+
+def display_selector_shortcuts(stdscr: curses.window) -> None:
+    height, width = stdscr.getmaxyx()
+    modal_height, modal_width = 10, 50
+    start_y, start_x = (height - modal_height) // 2, (width - modal_width) // 2
+
+    modal_win = curses.newwin(modal_height, modal_width, start_y, start_x)
+    modal_win.box()
+
+    modal_win.addstr(1, 2, "Player Selector Shortcuts", curses.A_BOLD)
+
+    shortcuts = [
+        ("UP/DOWN", "Select player"),
+        ("ENTER", "Activate player"),
+        ("q", "Quit application"),
+    ]
+
+    for i, (key, description) in enumerate(shortcuts):
+        modal_win.addstr(3 + i, 2, f"{key:<10} : {description}")
+
+    modal_win.addstr(modal_height - 2, 2, "Press any key to close", curses.A_ITALIC)
+    modal_win.refresh()
 
 def display_player_control(stdscr: curses.window, active_player: BlusoundPlayer, player_status: Optional[PlayerStatus], show_shortcuts: bool) -> None:
     if show_shortcuts:
@@ -127,7 +154,9 @@ def display_input_selection(stdscr: curses.window, active_player: BlusoundPlayer
         else:
             stdscr.addstr(9 + i, 4, f"  {input_data.text} ({input_data.input_type})")
 
-def handle_player_selection(key: int, selected_index: int, players: List[BlusoundPlayer], active_player: Optional[BlusoundPlayer]) -> Tuple[bool, Optional[BlusoundPlayer], Optional[PlayerStatus]]:
+def handle_player_selection(key: int, selected_index: int, players: List[BlusoundPlayer], active_player: Optional[BlusoundPlayer], selector_shortcuts_open: bool) -> Tuple[bool, Optional[BlusoundPlayer], Optional[PlayerStatus], bool]:
+    if selector_shortcuts_open:
+        return False, active_player, None, False
     if key == KEY_UP and selected_index > 0:
         selected_index -= 1
     elif key == KEY_DOWN and selected_index < len(players) - 1:
@@ -136,10 +165,12 @@ def handle_player_selection(key: int, selected_index: int, players: List[Blusoun
         active_player = players[selected_index]
         success, result = active_player.get_status()
         if success and isinstance(result, PlayerStatus):
-            return True, active_player, result
+            return True, active_player, result, False
         else:
-            return False, active_player, None
-    return False, active_player, None
+            return False, active_player, None, False
+    elif key == KEY_QUESTION:
+        return False, active_player, None, True
+    return False, active_player, None, False
 
 def handle_player_control(key: int, active_player: Optional[BlusoundPlayer], player_status: Optional[PlayerStatus], title_win: curses.window, stdscr: curses.window) -> Tuple[bool, bool, Optional[PlayerStatus], bool]:
     global shortcuts_open
@@ -210,13 +241,14 @@ def handle_input_selection(key: int, active_player: BlusoundPlayer, selected_inp
     return True, selected_input_index, None
 
 def main(stdscr: curses.window) -> None:
-    global input_selection_mode, selected_input_index, shortcuts_open
+    global input_selection_mode, selected_input_index, shortcuts_open, selector_shortcuts_open
 
     # Clear screen and initialize
     stdscr.clear()
     input_selection_mode = False
     selected_input_index = 0
     shortcuts_open = False
+    selector_shortcuts_open = False
     curses.curs_set(0)
     curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLUE)
     curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE)
@@ -244,7 +276,7 @@ def main(stdscr: curses.window) -> None:
         update_header(title_win, "")
 
         if not player_mode:
-            display_player_selection(stdscr, players, selected_index, active_player)
+            display_player_selection(stdscr, players, selected_index, active_player, selector_shortcuts_open)
         else:
             if not input_selection_mode:
                 display_player_control(stdscr, active_player, player_status, shortcuts_open)
@@ -258,11 +290,15 @@ def main(stdscr: curses.window) -> None:
         if key == ord('q'):
             break
         elif not player_mode:
-            player_mode, active_player, new_status = handle_player_selection(key, selected_index, players, active_player)
-            if new_status:
-                player_status = new_status
-            elif active_player is None:
-                stdscr.addstr(height - 2, 2, "Error: Unable to connect to the player", curses.A_BOLD)
+            if selector_shortcuts_open:
+                if key != -1:
+                    selector_shortcuts_open = False
+            else:
+                player_mode, active_player, new_status, selector_shortcuts_open = handle_player_selection(key, selected_index, players, active_player, selector_shortcuts_open)
+                if new_status:
+                    player_status = new_status
+                elif active_player is None:
+                    stdscr.addstr(height - 2, 2, "Error: Unable to connect to the player", curses.A_BOLD)
         else:
             if shortcuts_open:
                 if key != -1:
