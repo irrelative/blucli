@@ -6,6 +6,7 @@ import logging
 from dataclasses import dataclass
 from zeroconf import ServiceBrowser, ServiceListener, Zeroconf
 from typing import List, Dict, Tuple, Optional, Union
+from dataclasses import dataclass, field
 import os
 import xml.etree.ElementTree as ET
 
