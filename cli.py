@@ -300,6 +300,23 @@ class BlusoundCLI:
             self.update_header(title_win, message, "Input Selection")
         return True, self.selected_input_index
 
+    def handle_streaming_source_selection(self, key: int, title_win: curses.window) -> Tuple[bool, int]:
+        if key == KEY_B:
+            return False, self.selected_source_index
+        elif key == KEY_UP and self.selected_source_index > 0:
+            self.selected_source_index -= 1
+        elif key == KEY_DOWN and self.selected_source_index < len(self.active_player.streaming_sources) - 1:
+            self.selected_source_index += 1
+        elif key == KEY_ENTER:
+            selected_source = self.active_player.streaming_sources[self.selected_source_index]
+            self.update_header(title_win, f"Selecting source: {selected_source.text}", "Streaming Source Selection")
+            success, message = self.active_player.select_input(selected_source)
+            if success:
+                self.update_player_status()
+                return False, self.selected_source_index
+            self.update_header(title_win, message, "Streaming Source Selection")
+        return True, self.selected_source_index
+
     def main(self, stdscr: curses.window):
         stdscr.clear()
         curses.curs_set(0)
@@ -367,19 +384,3 @@ class BlusoundCLI:
 if __name__ == "__main__":
     cli = BlusoundCLI()
     curses.wrapper(cli.main)
-    def handle_streaming_source_selection(self, key: int, title_win: curses.window) -> Tuple[bool, int]:
-        if key == KEY_B:
-            return False, self.selected_source_index
-        elif key == KEY_UP and self.selected_source_index > 0:
-            self.selected_source_index -= 1
-        elif key == KEY_DOWN and self.selected_source_index < len(self.active_player.streaming_sources) - 1:
-            self.selected_source_index += 1
-        elif key == KEY_ENTER:
-            selected_source = self.active_player.streaming_sources[self.selected_source_index]
-            self.update_header(title_win, f"Selecting source: {selected_source.text}", "Streaming Source Selection")
-            success, message = self.active_player.select_input(selected_source)
-            if success:
-                self.update_player_status()
-                return False, self.selected_source_index
-            self.update_header(title_win, message, "Streaming Source Selection")
-        return True, self.selected_source_index
