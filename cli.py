@@ -34,15 +34,15 @@ input_selection_mode: bool = False
 selected_input_index: int = 0
 player_status: Optional[PlayerStatus] = None
 
-def update_header(title_win, message):
+def update_header(title_win, message, view):
     global header_message, header_message_time
     title_win.clear()
-    title_win.addstr(1, 2, "Blusound CLI", curses.A_BOLD)
+    title_win.addstr(1, 2, f"Blusound CLI - {view}", curses.A_BOLD)
     if message:
         header_message = message
         header_message_time = time.time()
     if time.time() - header_message_time < 2:
-        title_win.addstr(1, 16, f" - {header_message}")
+        title_win.addstr(1, len(f"Blusound CLI - {view}") + 4, f"- {header_message}")
     title_win.refresh()
 
 def update_player_status(active_player):
@@ -177,44 +177,44 @@ def handle_player_control(key: int, active_player: Optional[BlusoundPlayer], pla
     if key == KEY_B:
         return False, False, None, False
     elif key == KEY_UP and active_player:
-        update_header(title_win, "Increasing volume...")
+        update_header(title_win, "Increasing volume...", "Player Control")
         new_volume = min(100, player_status.volume + 5) if player_status else 5
         success, message = active_player.set_volume(new_volume)
         if success:
             success, new_status = active_player.get_status()
             if success:
                 display_player_control(stdscr, active_player, new_status, shortcuts_open)
-        update_header(title_win, message)
+        update_header(title_win, message, "Player Control")
     elif key == KEY_DOWN:
-        update_header(title_win, "Decreasing volume...")
+        update_header(title_win, "Decreasing volume...", "Player Control")
         new_volume = max(0, player_status.volume - 5) if player_status else 0
         success, message = active_player.set_volume(new_volume)
         if success:
             success, new_status = active_player.get_status()
             if success:
                 display_player_control(stdscr, active_player, new_status, shortcuts_open)
-        update_header(title_win, message)
+        update_header(title_win, message, "Player Control")
     elif (key == ord('p') or key == KEY_SPACE) and active_player:
-        update_header(title_win, "Toggling play/pause...")
+        update_header(title_win, "Toggling play/pause...", "Player Control")
         if player_status and player_status.state == "play":
             success, message = active_player.pause()
         else:
             success, message = active_player.play()
         if success:
             success, new_status = active_player.get_status()
-        update_header(title_win, message)
+        update_header(title_win, message, "Player Control")
     elif key == ord('>') and active_player:
-        update_header(title_win, "Skipping to next track...")
+        update_header(title_win, "Skipping to next track...", "Player Control")
         success, message = active_player.skip()
         if success:
             success, new_status = active_player.get_status()
-        update_header(title_win, message)
+        update_header(title_win, message, "Player Control")
     elif key == ord('<') and active_player:
-        update_header(title_win, "Going to previous track...")
+        update_header(title_win, "Going to previous track...", "Player Control")
         success, message = active_player.back()
         if success:
             success, new_status = active_player.get_status()
-        update_header(title_win, message)
+        update_header(title_win, message, "Player Control")
     elif key == KEY_I:
         return True, True, None, False
     elif key == KEY_QUESTION:
@@ -230,13 +230,13 @@ def handle_input_selection(key: int, active_player: BlusoundPlayer, selected_inp
         selected_input_index += 1
     elif key == KEY_ENTER:
         selected_input = active_player.inputs[selected_input_index]
-        update_header(title_win, f"Selecting input: {selected_input.text}")
+        update_header(title_win, f"Selecting input: {selected_input.text}", "Input Selection")
         success, message = active_player.select_input(selected_input)
         if success:
             success, new_status = active_player.get_status()
             if success:
                 return False, selected_input_index, new_status
-        update_header(title_win, message)
+        update_header(title_win, message, "Input Selection")
     return True, selected_input_index, None
 
 def main(stdscr: curses.window) -> None:
@@ -272,14 +272,15 @@ def main(stdscr: curses.window) -> None:
     while True:
         stdscr.clear()
         stdscr.refresh()
-        update_header(title_win, "")
-
         if not player_mode:
+            update_header(title_win, "", "Player Selection")
             display_player_selection(stdscr, players, selected_index, active_player, selector_shortcuts_open)
         else:
             if not input_selection_mode:
+                update_header(title_win, "", "Player Control")
                 display_player_control(stdscr, active_player, player_status, shortcuts_open)
             else:
+                update_header(title_win, "", "Input Selection")
                 display_input_selection(stdscr, active_player, selected_input_index)
 
         # Get user input
