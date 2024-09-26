@@ -1,6 +1,9 @@
 # Blusound CLI
 
-A CLI interface to control Blusound streamers.
+A basic CLI interface to control Blusound streamers.
+
+![Screenshot](./images/basic.jpg)
+
 
 ## Features
 
