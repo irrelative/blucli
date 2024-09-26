@@ -1,9 +1,16 @@
 import curses
 import time
-import threading
 import requests
 from typing import List, Optional, Tuple
 from player import BlusoundPlayer, PlayerStatus, threaded_discover
+import logging
+
+
+# Set up logging
+logging.basicConfig(filename='logs/cli.log', level=logging.INFO,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
+logger = logging.getLogger(__name__)
 
 def create_volume_bar(volume, width=20):
     filled = int(volume / 100 * width)
