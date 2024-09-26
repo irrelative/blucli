@@ -107,11 +107,11 @@ def handle_player_selection(key: int, selected_index: int, players: List[Blusoun
             return False, active_player, None
     return False, active_player, None
 
-def handle_player_control(key: int, active_player: BlusoundPlayer, player_status: Optional[PlayerStatus], title_win: curses.window, stdscr: curses.window) -> Tuple[bool, bool, Optional[PlayerStatus]]:
+def handle_player_control(key: int, active_player: Optional[BlusoundPlayer], player_status: Optional[PlayerStatus], title_win: curses.window, stdscr: curses.window) -> Tuple[bool, bool, Optional[PlayerStatus]]:
     new_status = None
     if key == KEY_B:
         return False, False, None
-    elif key == KEY_UP:
+    elif key == KEY_UP and active_player:
         update_header(title_win, "Increasing volume...")
         new_volume = min(100, player_status.volume + 5) if player_status else 5
         success, message = active_player.set_volume(new_volume)
@@ -239,7 +239,7 @@ def main(stdscr: curses.window) -> None:
 
         # Update player status every 10 seconds
         current_time = time.time()
-        if current_time - last_update_time >= 10:
+        if active_player and current_time - last_update_time >= 10:
             success, new_status = active_player.get_status()
             if success:
                 player_status = new_status
