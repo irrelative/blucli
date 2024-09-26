@@ -35,13 +35,14 @@ class BlusoundCLI:
         self.shortcuts_open: bool = False
         self.selector_shortcuts_open: bool = False
         self.source_selection_mode: bool = False
-        self.selected_source_index: int = 0
+        self.selected_source_index: List[int] = [0]
         self.player_status: Optional[PlayerStatus] = None
         self.detail_view: bool = False
         self.selected_index: int = 0
         self.active_player: Optional[BlusoundPlayer] = None
         self.players: List[BlusoundPlayer] = []
         self.last_update_time: float = 0.0
+        self.current_sources: List[PlayerSource] = []
 
     def update_header(self, title_win: curses.window, message: str, view: str, active_player: Optional[BlusoundPlayer] = None):
         title_win.clear()
@@ -179,16 +180,22 @@ class BlusoundCLI:
 
     def display_source_selection(self, stdscr: curses.window):
         active_player = self.active_player
-        selected_source_index = self.selected_source_index
-        stdscr.addstr(5, 2, "UP/DOWN: select source, ENTER: confirm selection, b: back to player control")
+        stdscr.addstr(5, 2, "UP/DOWN: select source, ENTER: expand/select, LEFT: go back, RIGHT: expand, b: back to player control")
         stdscr.addstr(8, 2, "Select Source:")
-        for i, source in enumerate(active_player.sources):
-            if i == selected_source_index:
-                stdscr.attron(curses.color_pair(2))
-                stdscr.addstr(9 + i, 4, f"> {source.text}")
-                stdscr.attroff(curses.color_pair(2))
-            else:
-                stdscr.addstr(9 + i, 4, f"  {source.text}")
+        
+        if not self.current_sources:
+            self.current_sources = active_player.sources
+
+        for i, source in enumerate(self.current_sources):
+            indent = "  " * (len(self.selected_source_index) - 1)
+            prefix = ">" if i == self.selected_source_index[-1] else " "
+            expand_indicator = "+" if source.browse_key else " "
+            stdscr.addstr(9 + i, 4, f"{indent}{prefix} {expand_indicator} {source.text}")
+
+        if self.selected_source_index[-1] < len(self.current_sources):
+            selected_source = self.current_sources[self.selected_source_index[-1]]
+            if selected_source.browse_key:
+                active_player.get_nested_sources(selected_source)
 
     def handle_player_selection(self, key: int) -> Tuple[bool, Optional[BlusoundPlayer], bool]:
         if self.selector_shortcuts_open:
@@ -265,21 +272,32 @@ class BlusoundCLI:
             self.update_header(title_win, f"{'Detailed' if self.detail_view else 'Summary'} view", "Player Control")
         return True, False
 
-    def handle_source_selection(self, key: int, title_win: curses.window) -> Tuple[bool, int]:
+    def handle_source_selection(self, key: int, title_win: curses.window) -> Tuple[bool, List[int]]:
         if key == KEY_B:
             return False, self.selected_source_index
-        elif key == KEY_UP and self.selected_source_index > 0:
-            self.selected_source_index -= 1
-        elif key == KEY_DOWN and self.selected_source_index < len(self.active_player.sources) - 1:
-            self.selected_source_index += 1
-        elif key == KEY_ENTER:
-            selected_source = self.active_player.sources[self.selected_source_index]
-            self.update_header(title_win, f"Selecting source: {selected_source.text}", "Source Selection")
-            success, message = self.active_player.select_input(selected_source)
-            if success:
-                self.update_player_status()
-                return False, self.selected_source_index
-            self.update_header(title_win, message, "Source Selection")
+        elif key == KEY_UP and self.selected_source_index[-1] > 0:
+            self.selected_source_index[-1] -= 1
+        elif key == KEY_DOWN and self.selected_source_index[-1] < len(self.current_sources) - 1:
+            self.selected_source_index[-1] += 1
+        elif key == KEY_LEFT and len(self.selected_source_index) > 1:
+            self.selected_source_index.pop()
+            self.current_sources = self.active_player.sources
+            for index in self.selected_source_index[:-1]:
+                self.current_sources = self.current_sources[index].children
+        elif key == KEY_RIGHT or key == KEY_ENTER:
+            selected_source = self.current_sources[self.selected_source_index[-1]]
+            if selected_source.browse_key:
+                self.active_player.get_nested_sources(selected_source)
+                if selected_source.children:
+                    self.current_sources = selected_source.children
+                    self.selected_source_index.append(0)
+            elif selected_source.play_url:
+                self.update_header(title_win, f"Selecting source: {selected_source.text}", "Source Selection")
+                success, message = self.active_player.select_input(selected_source)
+                if success:
+                    self.update_player_status()
+                    return False, self.selected_source_index
+                self.update_header(title_win, message, "Source Selection")
         return True, self.selected_source_index
 
     def main(self, stdscr: curses.window):

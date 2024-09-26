@@ -64,6 +64,7 @@ class PlayerSource:
     play_url: Optional[str]
     input_type: Optional[str]
     type: str
+    children: List['PlayerSource'] = field(default_factory=list)
 
 class BlusoundPlayer:
     def __init__(self, host_name, name):
@@ -74,13 +75,15 @@ class BlusoundPlayer:
         logger.info(f"Initialized BlusoundPlayer: {self.name} at {self.host_name}")
         self.capture_sources()
 
-    def capture_sources(self) -> None:
+    def capture_sources(self, browse_key: Optional[str] = None) -> List[PlayerSource]:
         url = f"{self.base_url}/Browse"
+        if browse_key:
+            url += f"?key={browse_key}"
         try:
             response = requests.get(url)
             response.raise_for_status()
             root = ET.fromstring(response.text)
-            self.sources = []
+            sources = []
             for item in root.findall('item'):
                 source = PlayerSource(
                     text=item.get('text', ''),
@@ -90,10 +93,19 @@ class BlusoundPlayer:
                     input_type=item.get('inputType'),
                     type=item.get('type', '')
                 )
-                self.sources.append(source)
-            logger.info(f"Captured {len(self.sources)} sources for {self.name}")
+                sources.append(source)
+            logger.info(f"Captured {len(sources)} sources for {self.name}")
+            return sources
         except requests.RequestException as e:
             logger.error(f"Error capturing sources for {self.name}: {str(e)}")
+            return []
+
+    def get_nested_sources(self, source: PlayerSource) -> None:
+        if source.browse_key and not source.children:
+            source.children = self.capture_sources(source.browse_key)
+
+    def initialize_sources(self) -> None:
+        self.sources = self.capture_sources()
 
     def get_status(self, timeout: Optional[int] = None, etag: Optional[str] = None) -> Tuple[bool, Union[PlayerStatus, str]]:
         url = f"{self.base_url}/Status"
