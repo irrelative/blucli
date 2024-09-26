@@ -291,6 +291,8 @@ class BlusoundCLI:
                 if selected_source.children:
                     self.current_sources = selected_source.children
                     self.selected_source_index.append(0)
+                else:
+                    self.update_header(title_win, f"No nested sources for: {selected_source.text}", "Source Selection")
             elif selected_source.play_url:
                 self.update_header(title_win, f"Selecting source: {selected_source.text}", "Source Selection")
                 success, message = self.active_player.select_input(selected_source)
@@ -298,6 +300,8 @@ class BlusoundCLI:
                     self.update_player_status()
                     return False, self.selected_source_index
                 self.update_header(title_win, message, "Source Selection")
+            else:
+                self.update_header(title_win, f"Cannot expand or play: {selected_source.text}", "Source Selection")
         return True, self.selected_source_index
 
     def main(self, stdscr: curses.window):
