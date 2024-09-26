@@ -245,7 +245,7 @@ def discover(players):
     logger.info("Starting discovery process")
     zeroconf = Zeroconf()
     listener = MyListener()
-    browser = ServiceBrowser(zeroconf, "_musc._tcp.local.", listener)
+    ServiceBrowser(zeroconf, "_musc._tcp.local.", listener)
     try:
         while True:
             time.sleep(1)
