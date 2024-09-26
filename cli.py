@@ -283,6 +283,9 @@ class BlusoundCLI:
             }
             pretty_state = json.dumps(player_state, indent=2)
             
+            # Log the pretty print data
+            logger.info(f"Pretty print data:\n{pretty_state}")
+            
             height, width = stdscr.getmaxyx()
             pad = curses.newpad(len(pretty_state.split('\n')) + 2, max(len(line) for line in pretty_state.split('\n')) + 2)
             pad.addstr(0, 0, pretty_state)
