@@ -103,14 +103,14 @@ def display_player_control(stdscr: curses.window, active_player: BlusoundPlayer,
         stdscr.addstr(9, 2, f"Album: {player_status.album}")
         stdscr.addstr(10, 2, f"Service: {player_status.service}")
         
-        stdscr.addstr(12, 2, "Available Inputs:")
-        for i, input_data in enumerate(active_player.inputs):
-            if player_status.inputId and input_data.id == player_status.inputId:
-                stdscr.attron(curses.color_pair(2))
-                stdscr.addstr(13 + i, 4, f"* {input_data.text} ({input_data.input_type})")
-                stdscr.attroff(curses.color_pair(2))
-            else:
-                stdscr.addstr(13 + i, 4, f"  {input_data.text} ({input_data.input_type})")
+        stdscr.addstr(12, 2, "Active Input:")
+        active_input = next((input_data for input_data in active_player.inputs if input_data.id == player_status.inputId), None)
+        if active_input:
+            stdscr.attron(curses.color_pair(2))
+            stdscr.addstr(13, 4, f"* {active_input.text} ({active_input.input_type})")
+            stdscr.attroff(curses.color_pair(2))
+        else:
+            stdscr.addstr(13, 4, "No active input")
         
         stdscr.addstr(stdscr.getmaxyx()[0] - 1, 2, "Press '?' to show keyboard shortcuts")
 
