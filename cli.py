@@ -192,10 +192,7 @@ class BlusoundCLI:
             expand_indicator = "+" if source.browse_key else " "
             stdscr.addstr(9 + i, 4, f"{indent}{prefix} {expand_indicator} {source.text}")
 
-        if self.selected_source_index and self.selected_source_index[-1] < len(self.current_sources):
-            selected_source = self.current_sources[self.selected_source_index[-1]]
-            if selected_source.browse_key:
-                active_player.get_nested_sources(selected_source)
+        # Remove the automatic fetching of nested sources
 
     def handle_player_selection(self, key: int) -> Tuple[bool, Optional[BlusoundPlayer], bool]:
         if self.selector_shortcuts_open:
@@ -286,13 +283,11 @@ class BlusoundCLI:
                 self.current_sources = self.current_sources[index].children
         elif key == KEY_RIGHT or key == KEY_ENTER:
             selected_source = self.current_sources[self.selected_source_index[-1]]
-            if selected_source.browse_key:
+            if selected_source.browse_key and not selected_source.children:
                 self.active_player.get_nested_sources(selected_source)
-                if selected_source.children:
-                    self.current_sources = selected_source.children
-                    self.selected_source_index.append(0)
-                else:
-                    self.update_header(title_win, f"No nested sources for: {selected_source.text}", "Source Selection")
+            if selected_source.children:
+                self.current_sources = selected_source.children
+                self.selected_source_index.append(0)
             elif selected_source.play_url:
                 self.update_header(title_win, f"Selecting source: {selected_source.text}", "Source Selection")
                 success, message = self.active_player.select_input(selected_source)
