@@ -306,7 +306,7 @@ def main(stdscr: curses.window) -> None:
         else:
             if not input_selection_mode:
                 update_header(title_win, "", "Player Control", active_player)
-                display_player_control(stdscr, active_player, player_status, shortcuts_open)
+                display_player_control(stdscr, active_player, player_status, shortcuts_open, detail_view)
             else:
                 update_header(title_win, "", "Input Selection", active_player)
                 display_input_selection(stdscr, active_player, selected_input_index)
@@ -332,7 +332,7 @@ def main(stdscr: curses.window) -> None:
                 if key != -1:
                     shortcuts_open = False
             elif not input_selection_mode:
-                player_mode, input_selection_mode, new_status, shortcuts_open = handle_player_control(key, active_player, player_status, title_win, stdscr)
+                player_mode, input_selection_mode, new_status, shortcuts_open, detail_view = handle_player_control(key, active_player, player_status, title_win, stdscr)
                 if new_status:
                     player_status = new_status
                 if input_selection_mode:
