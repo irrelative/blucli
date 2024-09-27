@@ -209,6 +209,12 @@ class BlusoundCLI:
             page_info = f"Page {current_page + 1}/{(total_items + max_display_items - 1) // max_display_items}"
             stdscr.addstr(height - 2, width - len(page_info) - 2, page_info)
 
+        # Ensure the selected index is within the current page
+        if self.selected_source_index[-1] >= end_index:
+            self.selected_source_index[-1] = end_index - 1
+        elif self.selected_source_index[-1] < start_index:
+            self.selected_source_index[-1] = start_index
+
         # Remove the automatic fetching of nested sources
 
     def handle_player_selection(self, key: int) -> Tuple[bool, Optional[BlusoundPlayer], bool]:
