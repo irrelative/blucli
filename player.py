@@ -70,6 +70,7 @@ class PlayerSource:
     play_url: Optional[str]
     input_type: Optional[str]
     type: str
+    search_key: Optional[str] = None
     children: List['PlayerSource'] = field(default_factory=list)
 
 class BlusoundPlayer:
@@ -98,6 +99,10 @@ class BlusoundPlayer:
             response = self.request(url, params)
             root = ET.fromstring(response.text)
             sources = []
+            
+            # Capture the search_key from the <browse> element
+            browse_search_key = root.get('searchKey')
+            
             for item in root.findall('item'):
                 source = PlayerSource(
                     text=item.get('text', ''),
@@ -105,7 +110,8 @@ class BlusoundPlayer:
                     browse_key=item.get('browseKey'),
                     play_url=item.get('playURL'),
                     input_type=item.get('inputType'),
-                    type=item.get('type', '')
+                    type=item.get('type', ''),
+                    search_key=browse_search_key  # Add the search_key to each source
                 )
                 sources.append(source)
             logger.info(f"Captured {len(sources)} sources for {self.name}")
