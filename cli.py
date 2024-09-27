@@ -182,17 +182,32 @@ class BlusoundCLI:
 
     def display_source_selection(self, stdscr: curses.window):
         active_player = self.active_player
-        stdscr.addstr(5, 2, "UP/DOWN: select source, ENTER: expand/select, LEFT: go back, RIGHT: expand, b: back to player control")
+        height, width = stdscr.getmaxyx()
+        max_display_items = height - 12  # Reserve space for header and instructions
+
+        stdscr.addstr(5, 2, "UP/DOWN: select source, ENTER: expand/select, LEFT: go back, RIGHT: expand")
+        stdscr.addstr(6, 2, "n: next page, p: previous page, b: back to player control")
         stdscr.addstr(8, 2, "Select Source:")
         
         if not self.current_sources:
             self.current_sources = active_player.sources
 
-        for i, source in enumerate(self.current_sources):
+        total_items = len(self.current_sources)
+        current_page = self.selected_source_index[-1] // max_display_items
+        start_index = current_page * max_display_items
+        end_index = min(start_index + max_display_items, total_items)
+
+        for i in range(start_index, end_index):
+            source = self.current_sources[i]
             indent = "  " * (len(self.selected_source_index) - 1)
             prefix = ">" if i == self.selected_source_index[-1] else " "
             expand_indicator = "+" if source.browse_key else " "
-            stdscr.addstr(9 + i, 4, f"{indent}{prefix} {expand_indicator} {source.text}")
+            display_index = i - start_index
+            stdscr.addstr(9 + display_index, 4, f"{indent}{prefix} {expand_indicator} {source.text}")
+
+        if total_items > max_display_items:
+            page_info = f"Page {current_page + 1}/{(total_items + max_display_items - 1) // max_display_items}"
+            stdscr.addstr(height - 2, width - len(page_info) - 2, page_info)
 
         # Remove the automatic fetching of nested sources
 
@@ -290,12 +305,25 @@ class BlusoundCLI:
             logger.info(f"Pretty print data:\n{pretty_state}")
 
     def handle_source_selection(self, key: int, title_win: curses.window) -> Tuple[bool, List[int]]:
+        height, _ = title_win.getmaxyx()
+        max_display_items = height - 12
+
         if key == KEY_B:
             return False, self.selected_source_index
-        elif key == KEY_UP and self.selected_source_index and self.selected_source_index[-1] > 0:
-            self.selected_source_index[-1] -= 1
-        elif key == KEY_DOWN and self.selected_source_index and self.selected_source_index[-1] < len(self.current_sources) - 1:
-            self.selected_source_index[-1] += 1
+        elif key == KEY_UP:
+            if self.selected_source_index[-1] > 0:
+                self.selected_source_index[-1] -= 1
+        elif key == KEY_DOWN:
+            if self.selected_source_index[-1] < len(self.current_sources) - 1:
+                self.selected_source_index[-1] += 1
+        elif key == ord('n'):  # Next page
+            next_page_start = ((self.selected_source_index[-1] // max_display_items) + 1) * max_display_items
+            if next_page_start < len(self.current_sources):
+                self.selected_source_index[-1] = next_page_start
+        elif key == ord('p'):  # Previous page
+            prev_page_start = ((self.selected_source_index[-1] // max_display_items) - 1) * max_display_items
+            if prev_page_start >= 0:
+                self.selected_source_index[-1] = prev_page_start
         elif key == KEY_LEFT:
             if len(self.selected_source_index) > 1:
                 self.selected_source_index.pop()
