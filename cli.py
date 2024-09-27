@@ -4,13 +4,18 @@ import requests
 from typing import List, Optional, Tuple
 from player import BlusoundPlayer, PlayerStatus, PlayerSource, threaded_discover
 import logging
+from logging.handlers import RotatingFileHandler
 import json
 
 # Set up logging
-logging.basicConfig(filename='logs/cli.log', level=logging.INFO,
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S')
+log_file = 'logs/cli.log'
+log_handler = RotatingFileHandler(log_file, maxBytes=1024*1024, backupCount=1)
+log_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                                  datefmt='%Y-%m-%d %H:%M:%S')
+log_handler.setFormatter(log_formatter)
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+logger.addHandler(log_handler)
 
 # Define key codes
 KEY_UP = curses.KEY_UP
