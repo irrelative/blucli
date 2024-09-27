@@ -261,6 +261,31 @@ class BlusoundPlayer:
             logger.error(f"Error selecting source for {self.name}: {str(e)}")
             return False, str(e)
 
+    def search(self, search_key: str, search_string: str) -> List[PlayerSource]:
+        url = "/Browse"
+        params = {'key': search_key, 'q': search_string}
+        logger.info(f"Searching for '{search_string}' with key '{search_key}' on {self.name}")
+        try:
+            response = self.request(url, params)
+            root = ET.fromstring(response.text)
+            sources = []
+            for item in root.findall('item'):
+                source = PlayerSource(
+                    text=item.get('text', ''),
+                    image=item.get('image', ''),
+                    browse_key=item.get('browseKey'),
+                    play_url=item.get('playURL'),
+                    input_type=item.get('inputType'),
+                    type=item.get('type', ''),
+                    search_key=root.get('searchKey')
+                )
+                sources.append(source)
+            logger.info(f"Found {len(sources)} results for search '{search_string}' on {self.name}")
+            return sources
+        except requests.RequestException as e:
+            logger.error(f"Error searching on {self.name}: {str(e)}")
+            return []
+
 class MyListener(ServiceListener):
     def __init__(self):
         self.players = []
