@@ -296,11 +296,12 @@ class BlusoundCLI:
             self.selected_source_index[-1] -= 1
         elif key == KEY_DOWN and self.selected_source_index and self.selected_source_index[-1] < len(self.current_sources) - 1:
             self.selected_source_index[-1] += 1
-        elif key == KEY_LEFT and len(self.selected_source_index) > 1:
-            self.selected_source_index.pop()
-            self.current_sources = self.active_player.sources
-            for index in self.selected_source_index[:-1]:
-                self.current_sources = self.current_sources[index].children
+        elif key == KEY_LEFT:
+            if len(self.selected_source_index) > 1:
+                self.selected_source_index.pop()
+                self.current_sources = self.active_player.sources
+                for index in self.selected_source_index[:-1]:
+                    self.current_sources = self.current_sources[index].children
         elif key == KEY_RIGHT or key == KEY_ENTER:
             selected_source = self.current_sources[self.selected_source_index[-1]]
             if selected_source.browse_key:
