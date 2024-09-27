@@ -51,7 +51,7 @@ class BlusoundCLI:
         self.current_sources: List[PlayerSource] = []
 
     def update_header(self, title_win: curses.window, message: str, view: str, active_player: Optional[BlusoundPlayer] = None):
-        title_win.clear()
+        title_win.erase()
         header = f"Blusound CLI - {view}"
         if active_player:
             header += f" - {active_player.name}"
@@ -374,7 +374,7 @@ class BlusoundCLI:
         return True, self.selected_source_index
 
     def main(self, stdscr: curses.window):
-        stdscr.clear()
+        stdscr.erase()
         curses.curs_set(0)
         curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLUE)
         curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE)
@@ -390,7 +390,7 @@ class BlusoundCLI:
         player_mode: bool = False
 
         while True:
-            stdscr.clear()
+            stdscr.erase()
             stdscr.refresh()
             if not player_mode:
                 self.update_header(title_win, "", "Player Selection")
