@@ -193,8 +193,8 @@ class BlusoundCLI:
             self.current_sources = active_player.sources
 
         total_items = len(self.current_sources)
-        current_page = self.selected_source_index[-1] // max_display_items
-        start_index = current_page * max_display_items
+        current_page = max(0, self.selected_source_index[-1] // max_display_items)
+        start_index = max(0, current_page * max_display_items)
         end_index = min(start_index + max_display_items, total_items)
 
         for i in range(start_index, end_index):
