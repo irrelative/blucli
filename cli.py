@@ -290,12 +290,23 @@ class BlusoundCLI:
 
     def pretty_print_player_state(self, stdscr: curses.window):
         if self.active_player and self.player_status:
+            def serialize_source(source):
+                return {
+                    "text": source.text,
+                    "image": source.image,
+                    "browse_key": source.browse_key,
+                    "play_url": source.play_url,
+                    "input_type": source.input_type,
+                    "type": source.type,
+                    "children": [serialize_source(child) for child in source.children]
+                }
+
             player_state = {
                 "player": {
                     "name": self.active_player.name,
                     "host_name": self.active_player.host_name,
                     "base_url": self.active_player.base_url,
-                    "sources": [source.__dict__ for source in self.active_player.sources]
+                    "sources": [serialize_source(source) for source in self.active_player.sources]
                 },
                 "status": self.player_status.__dict__
             }
