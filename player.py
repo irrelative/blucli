@@ -76,13 +76,21 @@ class BlusoundPlayer:
         logger.info(f"Initialized BlusoundPlayer: {self.name} at {self.host_name}")
         self.initialize_sources()
 
+    def request(self, url: str, params: Optional[Dict] = None) -> requests.Response:
+        full_url = f"{self.base_url}{url}"
+        logger.info(f"Sending request to: {full_url}")
+        logger.info(f"Request params: {params}")
+        response = requests.get(full_url, params=params)
+        logger.info(f"Response status code: {response.status_code}")
+        logger.info(f"Response content: {response.text}")
+        response.raise_for_status()
+        return response
+
     def capture_sources(self, browse_key: Optional[str] = None) -> List[PlayerSource]:
-        url = f"{self.base_url}/Browse"
-        if browse_key:
-            url += f"?key={browse_key}"
+        url = "/Browse"
+        params = {"key": browse_key} if browse_key else None
         try:
-            response = requests.get(url)
-            response.raise_for_status()
+            response = self.request(url, params)
             root = ET.fromstring(response.text)
             sources = []
             for item in root.findall('item'):
@@ -120,7 +128,7 @@ class BlusoundPlayer:
         logger.info(f"Initialized {len(self.sources)} sources for {self.name}")
 
     def get_status(self, timeout: Optional[int] = None, etag: Optional[str] = None) -> Tuple[bool, Union[PlayerStatus, str]]:
-        url = f"{self.base_url}/Status"
+        url = "/Status"
         params = {}
         if timeout:
             params['timeout'] = timeout
@@ -129,9 +137,7 @@ class BlusoundPlayer:
 
         logger.debug(f"Getting status for {self.name}")
         try:
-            response = requests.get(url, params=params)
-            response.raise_for_status()
-            logger.info(f"Got status for {self.name}: {response.text}")
+            response = self.request(url, params)
             root = ET.fromstring(response.text)
             
             def safe_find(element, tag, default=''):
@@ -188,45 +194,42 @@ class BlusoundPlayer:
             return False, str(e)
 
     def set_volume(self, volume: int) -> Tuple[bool, str]:
-        url = f"{self.base_url}/Volume"
+        url = "/Volume"
         params = {'level': volume}
         logger.info(f"Setting volume for {self.name} to {volume}")
         try:
-            response = requests.get(url, params=params)
-            response.raise_for_status()
+            self.request(url, params)
             return True, "Volume set successfully"
         except requests.RequestException as e:
             logger.error(f"Error setting volume for {self.name}: {str(e)}")
             return False, str(e)
 
     def toggle_play_pause(self) -> Tuple[bool, str]:
-        url = f"{self.base_url}/Pause?toggle=1"
+        url = "/Pause"
+        params = {'toggle': 1}
         logger.info(f"Toggling play/pause for {self.name}")
         try:
-            response = requests.get(url)
-            response.raise_for_status()
+            self.request(url, params)
             return True, "Playback toggled successfully"
         except requests.RequestException as e:
             logger.error(f"Error toggling play/pause for {self.name}: {str(e)}")
             return False, str(e)
 
     def skip(self) -> Tuple[bool, str]:
-        url = f"{self.base_url}/Skip"
+        url = "/Skip"
         logger.info(f"Skipping track on {self.name}")
         try:
-            response = requests.get(url)
-            response.raise_for_status()
+            self.request(url)
             return True, "Skipped to next track successfully"
         except requests.RequestException as e:
             logger.error(f"Error skipping track on {self.name}: {str(e)}")
             return False, str(e)
 
     def back(self) -> Tuple[bool, str]:
-        url = f"{self.base_url}/Back"
+        url = "/Back"
         logger.info(f"Going back a track on {self.name}")
         try:
-            response = requests.get(url)
-            response.raise_for_status()
+            self.request(url)
             return True, "Went back to previous track successfully"
         except requests.RequestException as e:
             logger.error(f"Error going back a track on {self.name}: {str(e)}")
@@ -234,16 +237,16 @@ class BlusoundPlayer:
 
     def select_input(self, source: PlayerSource) -> Tuple[bool, str]:
         if source.play_url:
-            url = f"{self.base_url}{source.play_url}"
+            url = source.play_url
         elif source.browse_key:
-            url = f"{self.base_url}/Browse?key={source.browse_key}"
+            url = "/Browse"
+            params = {'key': source.browse_key}
         else:
             return False, "Invalid source"
         logger.info(f"Selecting source for {self.name}: {source.text}")
 
         try:
-            response = requests.get(url)
-            response.raise_for_status()
+            self.request(url, params if source.browse_key else None)
             return True, f"{source.text} selected successfully"
         except requests.RequestException as e:
             logger.error(f"Error selecting source for {self.name}: {str(e)}")
