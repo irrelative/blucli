@@ -22,8 +22,8 @@ KEY_I = ord('i')
 KEY_QUESTION = ord('?')
 KEY_D = ord('d')
 KEY_P = ord('p')
-KEY_RIGHT = ord('>')
-KEY_LEFT = ord('<')
+KEY_RIGHT = curses.KEY_RIGHT
+KEY_LEFT = curses.KEY_LEFT
 
 def create_volume_bar(volume, width=20):
     filled = int(volume / 100 * width)
@@ -324,6 +324,7 @@ class BlusoundCLI:
     def handle_source_selection(self, key: int, title_win: curses.window) -> Tuple[bool, List[int]]:
         height, _ = title_win.getmaxyx()
         max_display_items = height - 12
+        logger.info("Key pressed: %s", key)
 
         if key == KEY_B:
             return False, self.selected_source_index
