@@ -383,4 +383,9 @@ class BlusoundCLI:
 
 if __name__ == "__main__":
     cli = BlusoundCLI()
-    curses.wrapper(cli.main)
+    try:
+        curses.wrapper(cli.main)
+    except Exception as e:
+        logger.error(f"Error in main loop: {e}")
+        import pdb; pdb.post_mortem()
+        raise e
