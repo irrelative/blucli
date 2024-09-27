@@ -290,6 +290,7 @@ class BlusoundCLI:
         elif key == KEY_I or key == ord('s'):
             self.source_selection_mode = True
             self.selected_source_index = [0]
+            self.current_sources = self.active_player.sources
         elif key == KEY_QUESTION:
             self.shortcuts_open = not self.shortcuts_open
         elif key == KEY_D:
@@ -332,6 +333,7 @@ class BlusoundCLI:
         logger.info("Key pressed: %s", key)
 
         if key == KEY_B:
+            self.source_selection_mode = False
             return False, self.selected_source_index
         elif key == KEY_UP:
             if self.selected_source_index[-1] > 0:
@@ -353,6 +355,9 @@ class BlusoundCLI:
                 self.current_sources = self.active_player.sources
                 for index in self.selected_source_index[:-1]:
                     self.current_sources = self.current_sources[index].children
+            else:
+                self.source_selection_mode = False
+                return False, self.selected_source_index
         elif key == KEY_RIGHT or key == KEY_ENTER:
             selected_source = self.current_sources[self.selected_source_index[-1]]
             if selected_source.browse_key:
