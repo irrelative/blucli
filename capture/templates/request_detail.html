@@ -10,10 +10,12 @@
 <p><strong>Destination Port:</strong> {{ request['dest_port'] }}</p>
 <p><strong>Method:</strong> {{ request['method'] }}</p>
 <p><strong>URI:</strong> {{ request['uri'] }}</p>
+<!-- Request data -->
 <p><strong>Headers:</strong><br><pre>{{ request['headers'] }}</pre></p>
 <p><strong>Body:</strong><br><pre>{{ request['body'] }}</pre></p>
 
 <h2>Response</h2>
+<!-- Response data -->
 <p><strong>Status Code:</strong> {{ request['status_code'] }}</p>
 <p><strong>Reason:</strong> {{ request['reason'] }}</p>
 <p><strong>Headers:</strong><br><pre>{{ request['response_headers'] }}</pre></p>
