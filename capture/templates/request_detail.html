@@ -11,14 +11,18 @@
 <p><strong>Method:</strong> {{ request['method'] }}</p>
 <p><strong>URI:</strong> {{ request['uri'] }}</p>
 <!-- Request data -->
-<p><strong>Headers:</strong><br><pre>{{ request['headers'] }}</pre></p>
-<p><strong>Body:</strong><br><pre>{{ request['body'] }}</pre></p>
+<p><strong>Headers:</strong></p>
+<pre>{{ request['headers'] }}</pre>
+<p><strong>Body:</strong></p>
+<pre>{{ request['body'] }}</pre>
 
 <h2>Response</h2>
 <!-- Response data -->
 <p><strong>Status Code:</strong> {{ request['status_code'] }}</p>
 <p><strong>Reason:</strong> {{ request['reason'] }}</p>
-<p><strong>Headers:</strong><br><pre>{{ request['response_headers'] }}</pre></p>
-<p><strong>Body:</strong><br><pre>{{ request['response_body'] }}</pre></p>
+<p><strong>Headers:</strong></p>
+<pre>{{ request['response_headers'] }}</pre>
+<p><strong>Body:</strong></p>
+<pre>{{ request['response_body'] }}</pre>
 {% endblock %}
 
