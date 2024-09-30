@@ -6,6 +6,7 @@ from player import BlusoundPlayer, PlayerStatus, PlayerSource, threaded_discover
 import logging
 from logging.handlers import RotatingFileHandler
 import json
+from config import get_preference, set_preference
 
 # Set up logging
 log_file = 'logs/cli.log'
@@ -235,6 +236,7 @@ class BlusoundCLI:
                 success, status = self.active_player.get_status()
                 if success:
                     self.player_status = status
+                    set_preference('last_player', self.active_player.name)
                     return True, self.active_player, False
                 else:
                     logger.error(f"Error getting player status: {status}")
@@ -393,6 +395,15 @@ class BlusoundCLI:
         stdscr.refresh()
 
         player_mode: bool = False
+
+        # Try to select the last player
+        last_player_name = get_preference('last_player')
+        if last_player_name:
+            for i, player in enumerate(self.players):
+                if player.name == last_player_name:
+                    self.selected_index = i
+                    player_mode, self.active_player, _ = self.handle_player_selection(KEY_ENTER)
+                    break
 
         while True:
             stdscr.erase()
