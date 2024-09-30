@@ -25,13 +25,11 @@ def main():
     c.execute('''
         CREATE TABLE IF NOT EXISTS responses (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            request_id INTEGER,
             timestamp REAL,
             status_code INTEGER,
             reason TEXT,
             headers TEXT,
-            body BLOB,
-            FOREIGN KEY(request_id) REFERENCES requests(id)
+            body BLOB
         )
     ''')
     conn.commit()
@@ -70,33 +68,73 @@ def main():
             data = streams[stream_id]
             try:
                 # Check if data starts with HTTP request
-                if data.startswith(b'GET') or data.startswith(b'POST'):
-                    request_end = data.find(b'\r\n\r\n') + 4
-                    request = data[:request_end].decode('utf-8', 'ignore')
+                if data.startswith((b'GET', b'POST', b'PUT', b'DELETE', b'OPTIONS', b'HEAD', b'PATCH')):
+                    request_end = data.find(b'\r\n\r\n')
+                    if request_end == -1:
+                        # Not a complete request yet
+                        return
+                    request_end += 4
+                    request_data = data[:request_end].decode('utf-8', 'ignore')
                     body = data[request_end:]
+
+                    # Parse request line
+                    lines = request_data.split('\r\n')
+                    request_line = lines[0]
+                    try:
+                        method, uri, version = request_line.split(' ')
+                    except ValueError:
+                        # Invalid request line
+                        method, uri, version = '', '', ''
+                    headers = '\r\n'.join(lines[1:])
+
+                    # For simplicity, assume the body is any remaining data
+                    # In production, handle Content-Length and Transfer-Encoding properly
+
                     # Store in database
                     c.execute('''
                         INSERT INTO requests (timestamp, src_ip, src_port, dest_ip, dest_port, method, uri, headers, body)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ''', (time.time(), src_ip, src_port, dst_ip, dst_port, '', '', request, body.decode('utf-8', 'ignore')))
+                    ''', (time.time(), src_ip, src_port, dst_ip, dst_port, method, uri, headers, body.decode('utf-8', 'ignore')))
                     conn.commit()
                     # Remove processed data
                     streams[stream_id] = data[request_end + len(body):]
                 # Check if data starts with HTTP response
                 elif data.startswith(b'HTTP/'):
-                    response_end = data.find(b'\r\n\r\n') + 4
-                    response = data[:response_end].decode('utf-8', 'ignore')
+                    response_end = data.find(b'\r\n\r\n')
+                    if response_end == -1:
+                        # Not a complete response yet
+                        return
+                    response_end += 4
+                    response_data = data[:response_end].decode('utf-8', 'ignore')
                     body = data[response_end:]
+
+                    # Parse status line
+                    lines = response_data.split('\r\n')
+                    status_line = lines[0]
+                    try:
+                        version, status_code, reason_phrase = status_line.split(' ', 2)
+                    except ValueError:
+                        # Invalid status line
+                        version, status_code, reason_phrase = '', '', ''
+                    headers = '\r\n'.join(lines[1:])
+
+                    # Handle gzip content if necessary
+                    if 'Content-Encoding: gzip' in headers:
+                        try:
+                            body = zlib.decompress(body, zlib.MAX_WBITS|16)
+                        except Exception as e:
+                            print('Error decompressing gzipped content:', e)
+
                     # Store in database
                     c.execute('''
                         INSERT INTO responses (timestamp, status_code, reason, headers, body)
                         VALUES (?, ?, ?, ?, ?)
-                    ''', (time.time(), '', '', response, body))
+                    ''', (time.time(), status_code, reason_phrase, headers, body))
                     conn.commit()
                     # Remove processed data
                     streams[stream_id] = data[response_end + len(body):]
                 else:
-                    # Not enough data yet
+                    # Not enough data yet or unrecognized data
                     pass
             except Exception as e:
                 print('Error parsing HTTP data:', e)
