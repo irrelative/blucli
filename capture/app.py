@@ -25,7 +25,7 @@ def index():
         SELECT r.id, r.timestamp, r.method, r.uri, r.headers, substr(r.body, 1, 100) as request_body,
                res.status_code, res.reason, res.headers as response_headers, substr(res.body, 1, 100) as response_body
         FROM requests r
-        LEFT JOIN responses res ON r.id = res.id
+        LEFT JOIN responses res ON r.id = res.request_id
         ORDER BY r.timestamp DESC
         LIMIT 100
     ''')
@@ -40,7 +40,7 @@ def request_detail(request_id):
         SELECT r.id, r.timestamp, r.src_ip, r.src_port, r.dest_ip, r.dest_port, r.method, r.uri, r.headers, r.body,
                res.status_code, res.reason, res.headers as response_headers, res.body as response_body
         FROM requests r
-        LEFT JOIN responses res ON r.id = res.id
+        LEFT JOIN responses res ON r.id = res.request_id
         WHERE r.id = ?
     ''', (request_id,))
     request = cur.fetchone()
