@@ -23,6 +23,6 @@
 <p><strong>Headers:</strong></p>
 <pre>{{ request['response_headers'] }}</pre>
 <p><strong>Body:</strong></p>
-<pre>{{ request['response_body'] }}</pre>
+<pre>{{ request['response_body'].decode() }}</pre>
 {% endblock %}
 
