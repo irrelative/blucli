@@ -1,4 +1,4 @@
-from flask import Flask, render_template, g, url_for
+from flask import Flask, render_template, g
 import sqlite3
 
 app = Flask(__name__)
@@ -7,7 +7,6 @@ DATABASE = 'requests.db'
 def get_db():
     db = getattr(g, '_database', None)
     if db is None:
-        # Ensure that row_factory is set to sqlite3.Row for easy access
         db = g._database = sqlite3.connect(DATABASE)
         db.row_factory = sqlite3.Row
     return db
@@ -23,8 +22,10 @@ def index():
     db = get_db()
     cur = db.cursor()
     cur.execute('''
-        SELECT r.id, r.timestamp, r.method, r.uri, r.headers, substr(r.body, 1, 100) as body
+        SELECT r.id, r.timestamp, r.method, r.uri, r.headers, substr(r.body, 1, 100) as request_body,
+               res.status_code, res.reason, res.headers as response_headers, substr(res.body, 1, 100) as response_body
         FROM requests r
+        LEFT JOIN responses res ON r.id = res.id
         ORDER BY r.timestamp DESC
         LIMIT 100
     ''')
@@ -36,43 +37,17 @@ def request_detail(request_id):
     db = get_db()
     cur = db.cursor()
     cur.execute('''
-        SELECT id, timestamp, src_ip, src_port, dest_ip, dest_port, method, uri, headers, body
-        FROM requests
-        WHERE id = ?
+        SELECT r.id, r.timestamp, r.src_ip, r.src_port, r.dest_ip, r.dest_port, r.method, r.uri, r.headers, r.body,
+               res.status_code, res.reason, res.headers as response_headers, res.body as response_body
+        FROM requests r
+        LEFT JOIN responses res ON r.id = res.id
+        WHERE r.id = ?
     ''', (request_id,))
     request = cur.fetchone()
     if request:
         return render_template('request_detail.html', request=request)
     else:
         return 'Request not found', 404
-
-@app.route('/responses')
-def responses():
-    db = get_db()
-    cur = db.cursor()
-    cur.execute('''
-        SELECT id, timestamp, status_code, reason, headers, substr(body, 1, 100) as body
-        FROM responses
-        ORDER BY timestamp DESC
-        LIMIT 100
-    ''')
-    responses = cur.fetchall()
-    return render_template('responses.html', responses=responses)
-
-@app.route('/response/<int:response_id>')
-def response_detail(response_id):
-    db = get_db()
-    cur = db.cursor()
-    cur.execute('''
-        SELECT id, timestamp, status_code, reason, headers, body
-        FROM responses
-        WHERE id = ?
-    ''', (response_id,))
-    response = cur.fetchone()
-    if response:
-        return render_template('response_detail.html', response=response)
-    else:
-        return 'Response not found', 404
 
 if __name__ == '__main__':
     app.run(debug=True)

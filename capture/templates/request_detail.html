@@ -1,6 +1,7 @@
 {% extends "layout.html" %}
 {% block content %}
-<h1>Request Details</h1>
+<h1>Request and Response Details</h1>
+<h2>Request</h2>
 <p><strong>ID:</strong> {{ request['id'] }}</p>
 <p><strong>Timestamp:</strong> {{ request['timestamp'] }}</p>
 <p><strong>Source IP:</strong> {{ request['src_ip'] }}</p>
@@ -11,5 +12,11 @@
 <p><strong>URI:</strong> {{ request['uri'] }}</p>
 <p><strong>Headers:</strong><br><pre>{{ request['headers'] }}</pre></p>
 <p><strong>Body:</strong><br><pre>{{ request['body'] }}</pre></p>
+
+<h2>Response</h2>
+<p><strong>Status Code:</strong> {{ request['status_code'] }}</p>
+<p><strong>Reason:</strong> {{ request['reason'] }}</p>
+<p><strong>Headers:</strong><br><pre>{{ request['response_headers'] }}</pre></p>
+<p><strong>Body:</strong><br><pre>{{ request['response_body'] }}</pre></p>
 {% endblock %}
 

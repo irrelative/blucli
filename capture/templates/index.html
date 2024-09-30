@@ -1,14 +1,18 @@
 {% extends "layout.html" %}
 {% block content %}
-<h1>HTTP Requests</h1>
+<h1>HTTP Requests and Responses</h1>
 <table border="1">
     <tr>
         <th>ID</th>
         <th>Timestamp</th>
         <th>Method</th>
         <th>URI</th>
-        <th>Headers</th>
-        <th>Body (Truncated)</th>
+        <th>Request Headers</th>
+        <th>Request Body (Truncated)</th>
+        <th>Status Code</th>
+        <th>Reason</th>
+        <th>Response Headers</th>
+        <th>Response Body (Truncated)</th>
     </tr>
     {% for req in requests %}
     <tr>
@@ -17,7 +21,11 @@
         <td>{{ req['method'] }}</td>
         <td>{{ req['uri'] }}</td>
         <td><pre>{{ req['headers'] }}</pre></td>
-        <td><pre>{{ req['body'] }}</pre></td>
+        <td><pre>{{ req['request_body'] }}</pre></td>
+        <td>{{ req['status_code'] }}</td>
+        <td>{{ req['reason'] }}</td>
+        <td><pre>{{ req['response_headers'] }}</pre></td>
+        <td><pre>{{ req['response_body'] }}</pre></td>
     </tr>
     {% endfor %}
 </table>
