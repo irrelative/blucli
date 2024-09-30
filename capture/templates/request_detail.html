@@ -1,0 +1,15 @@
+{% extends "layout.html" %}
+{% block content %}
+<h1>Request Details</h1>
+<p><strong>ID:</strong> {{ request['id'] }}</p>
+<p><strong>Timestamp:</strong> {{ request['timestamp'] }}</p>
+<p><strong>Source IP:</strong> {{ request['src_ip'] }}</p>
+<p><strong>Source Port:</strong> {{ request['src_port'] }}</p>
+<p><strong>Destination IP:</strong> {{ request['dest_ip'] }}</p>
+<p><strong>Destination Port:</strong> {{ request['dest_port'] }}</p>
+<p><strong>Method:</strong> {{ request['method'] }}</p>
+<p><strong>URI:</strong> {{ request['uri'] }}</p>
+<p><strong>Headers:</strong><br><pre>{{ request['headers'] }}</pre></p>
+<p><strong>Body:</strong><br><pre>{{ request['body'] }}</pre></p>
+{% endblock %}
+

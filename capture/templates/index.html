@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+{% block content %}
+<h1>HTTP Requests</h1>
+<table border="1">
+    <tr>
+        <th>ID</th>
+        <th>Timestamp</th>
+        <th>Method</th>
+        <th>URI</th>
+        <th>Headers</th>
+        <th>Body (Truncated)</th>
+    </tr>
+    {% for req in requests %}
+    <tr>
+        <td><a href="{{ url_for('request_detail', request_id=req['id']) }}">{{ req['id'] }}</a></td>
+        <td>{{ req['timestamp'] }}</td>
+        <td>{{ req['method'] }}</td>
+        <td>{{ req['uri'] }}</td>
+        <td><pre>{{ req['headers'] }}</pre></td>
+        <td><pre>{{ req['body'] }}</pre></td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}
+
