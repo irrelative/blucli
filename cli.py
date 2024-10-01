@@ -467,7 +467,7 @@ class BlusoundCLI:
             self.update_header(title_win, "", "Player Selection" if not player_mode else "Player Control")
 
     def get_input(self, stdscr, prompt):
-        curses.echo()
+        curses.noecho()  # Disable automatic echoing
         stdscr.addstr(prompt)
         stdscr.refresh()
         input_str = ""
@@ -484,15 +484,14 @@ class BlusoundCLI:
                         y, x = stdscr.getyx()
                         stdscr.addstr(y, x-1, " ")  # Clear the last character
                         stdscr.move(y, x-1)
-                elif ch >= 0 and ch <= 255:  # Valid ASCII range
+                elif ch >= 32 and ch <= 126:  # Printable ASCII range
                     input_str += chr(ch)
-                    stdscr.addstr(chr(ch))
+                    stdscr.addch(ch)  # Manually echo the character
                 stdscr.refresh()
             except ValueError:
                 # Ignore invalid characters
                 pass
 
-        curses.noecho()
         return input_str.strip()
 
     def handle_search(self, key: int, title_win: curses.window, stdscr: curses.window) -> bool:
