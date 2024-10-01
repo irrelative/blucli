@@ -66,7 +66,12 @@ class BlusoundCLI:
             self.header_message = message
             self.header_message_time = time.time()
         if time.time() - self.header_message_time < 2:
-            title_win.addstr(1, len(header) + 4, f"- {self.header_message}")
+            max_width = title_win.getmaxyx()[1] - len(header) - 7
+            truncated_message = self.header_message[:max_width] if len(self.header_message) > max_width else self.header_message
+            try:
+                title_win.addstr(1, len(header) + 4, f"- {truncated_message}")
+            except curses.error:
+                pass  # Ignore if still doesn't fit
         title_win.refresh()
 
     def update_player_status(self):
@@ -477,9 +482,14 @@ class BlusoundCLI:
             if search_term:
                 self.update_header(title_win, f"Searching for: {search_term}", "Search")
                 stdscr.refresh()
-                self.search_results = self.active_player.search(self.active_player.sources[0].search_key, search_term)
-                self.search_selected_index = 0
+                if self.active_player and self.active_player.sources:
+                    self.search_results = self.active_player.search(self.active_player.sources[0].search_key, search_term)
+                    self.search_selected_index = 0
+                else:
+                    self.update_header(title_win, "No active player or sources available", "Search")
+                    return False
             else:
+                self.update_header(title_win, "Search cancelled", "Search")
                 return False
         else:
             if key == KEY_UP and self.search_selected_index > 0:
