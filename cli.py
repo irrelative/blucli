@@ -466,20 +466,36 @@ class BlusoundCLI:
 
             self.update_header(title_win, "", "Player Selection" if not player_mode else "Player Control")
 
+    def get_input(self, stdscr, prompt):
+        curses.echo()
+        stdscr.addstr(prompt)
+        stdscr.refresh()
+        input_str = ""
+        
+        while True:
+            ch = stdscr.getch()
+            
+            if ch == 10:  # Enter key
+                break
+            elif ch == 127 or ch == 8:  # Backspace
+                if input_str:
+                    input_str = input_str[:-1]
+                    y, x = stdscr.getyx()
+                    stdscr.addstr(y, x-1, " ")  # Clear the last character
+                    stdscr.move(y, x-1)
+            else:
+                input_str += chr(ch)
+                stdscr.addstr(chr(ch))
+            stdscr.refresh()
+
+        curses.noecho()
+        return input_str.strip()
+
     def handle_search(self, key: int, title_win: curses.window, stdscr: curses.window) -> bool:
         if not self.search_results:
             self.update_header(title_win, "Enter search term:", "Search")
-            search_win = curses.newwin(3, 40, 5, 2)
-            search_win.box()
-            textbox = curses.textpad.Textbox(search_win)
-            stdscr.refresh()
-            
-            def validate(ch):
-                if ch == 10:  # Enter key
-                    return 7  # Ctrl-G, signals Textbox to return
-                return ch
-
-            search_term = textbox.edit(validate).strip()
+            stdscr.move(5, 2)  # Move cursor to appropriate position
+            search_term = self.get_input(stdscr, "Search: ")
             
             if search_term:
                 self.update_header(title_win, f"Searching for: {search_term}", "Search")
