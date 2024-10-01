@@ -459,6 +459,56 @@ class BlusoundCLI:
 
             self.update_header(title_win, "", "Player Selection" if not player_mode else "Player Control")
 
+    def handle_search(self, key: int, title_win: curses.window, stdscr: curses.window) -> bool:
+        if not self.search_results:
+            self.update_header(title_win, "Enter search term:", "Search")
+            search_win = curses.newwin(3, 40, 5, 2)
+            search_win.box()
+            textbox = curses.textpad.Textbox(search_win)
+            stdscr.refresh()
+            search_term = textbox.edit().strip()
+            
+            if search_term:
+                self.update_header(title_win, f"Searching for: {search_term}", "Search")
+                stdscr.refresh()
+                self.search_results = self.active_player.search(self.active_player.sources[0].search_key, search_term)
+                self.search_selected_index = 0
+            else:
+                return False
+        else:
+            if key == KEY_UP and self.search_selected_index > 0:
+                self.search_selected_index -= 1
+            elif key == KEY_DOWN and self.search_selected_index < len(self.search_results) - 1:
+                self.search_selected_index += 1
+            elif key == KEY_ENTER:
+                selected_source = self.search_results[self.search_selected_index]
+                success, message = self.active_player.select_input(selected_source)
+                self.update_header(title_win, message, "Search")
+                if success:
+                    self.update_player_status()
+                    return False
+            elif key == KEY_B:
+                return False
+
+        self.display_search_results(stdscr)
+        return True
+
+    def display_search_results(self, stdscr: curses.window):
+        stdscr.clear()
+        height, width = stdscr.getmaxyx()
+        max_display_items = height - 8
+
+        stdscr.addstr(5, 2, "Search Results:")
+        for i, source in enumerate(self.search_results[:max_display_items]):
+            if i == self.search_selected_index:
+                stdscr.attron(curses.color_pair(2))
+            stdscr.addstr(7 + i, 4, f"{source.text}")
+            if i == self.search_selected_index:
+                stdscr.attroff(curses.color_pair(2))
+
+        stdscr.addstr(height - 2, 2, "UP/DOWN: navigate, ENTER: select, b: back")
+        stdscr.refresh()
+
 if __name__ == "__main__":
     cli = BlusoundCLI()
     try:
