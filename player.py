@@ -271,16 +271,33 @@ class BlusoundPlayer:
             sources = []
             for item in root.findall('item'):
                 text = item.get('text', '').strip()
-                source = PlayerSource(
-                    text=text,
-                    image=item.get('image', ''),
-                    browse_key=item.get('browseKey'),
-                    play_url=item.get('playURL'),
-                    input_type=item.get('inputType'),
-                    type=item.get('type', ''),
-                    search_key=root.get('searchKey')
-                )
-                sources.append(source)
+                browse_key = item.get('browseKey')
+                if text == "Library" and browse_key:
+                    # Follow up with a second request for Library search
+                    library_response = self.request(url, {'key': browse_key})
+                    library_root = ET.fromstring(library_response.text)
+                    for library_item in library_root.findall('item'):
+                        source = PlayerSource(
+                            text=library_item.get('text', '').strip(),
+                            image=library_item.get('image', ''),
+                            browse_key=library_item.get('browseKey'),
+                            play_url=library_item.get('playURL'),
+                            input_type=library_item.get('inputType'),
+                            type=library_item.get('type', ''),
+                            search_key=library_root.get('searchKey')
+                        )
+                        sources.append(source)
+                else:
+                    source = PlayerSource(
+                        text=text,
+                        image=item.get('image', ''),
+                        browse_key=browse_key,
+                        play_url=item.get('playURL'),
+                        input_type=item.get('inputType'),
+                        type=item.get('type', ''),
+                        search_key=root.get('searchKey')
+                    )
+                    sources.append(source)
             logger.info(f"Found {len(sources)} results for search '{search_string}' on {self.name}")
             return sources
         except requests.RequestException as e:
