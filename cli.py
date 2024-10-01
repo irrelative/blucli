@@ -7,6 +7,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 import json
 from config import get_preference, set_preference
+import curses.textpad
 
 # Set up logging
 log_file = 'logs/cli.log'
@@ -30,6 +31,7 @@ KEY_D = ord('d')
 KEY_P = ord('p')
 KEY_RIGHT = curses.KEY_RIGHT
 KEY_LEFT = curses.KEY_LEFT
+KEY_S = ord('s')
 
 def create_volume_bar(volume, width=20):
     filled = int(volume / 100 * width)
@@ -50,6 +52,9 @@ class BlusoundCLI:
         self.players: List[BlusoundPlayer] = []
         self.last_update_time: float = 0.0
         self.current_sources: List[PlayerSource] = []
+        self.search_mode: bool = False
+        self.search_results: List[PlayerSource] = []
+        self.search_selected_index: int = 0
 
     def update_header(self, title_win: curses.window, message: str, view: str, active_player: Optional[BlusoundPlayer] = None):
         title_win.erase()
@@ -289,10 +294,14 @@ class BlusoundCLI:
             if success:
                 self.update_player_status()
             self.update_header(title_win, message, "Player Control")
-        elif key == KEY_I or key == ord('s'):
+        elif key == KEY_I:
             self.source_selection_mode = True
             self.selected_source_index = [0]
             self.current_sources = self.active_player.sources
+        elif key == KEY_S:
+            self.search_mode = True
+            self.search_results = []
+            self.search_selected_index = 0
         elif key == KEY_QUESTION:
             self.shortcuts_open = not self.shortcuts_open
         elif key == KEY_D:
@@ -436,6 +445,8 @@ class BlusoundCLI:
                 if self.shortcuts_open:
                     if key != -1:
                         self.shortcuts_open = False
+                elif self.search_mode:
+                    self.search_mode = self.handle_search(key, title_win, stdscr)
                 elif not self.source_selection_mode:
                     player_mode, _ = self.handle_player_control(key, title_win, stdscr)
                 else:
