@@ -466,7 +466,13 @@ class BlusoundCLI:
             search_win.box()
             textbox = curses.textpad.Textbox(search_win)
             stdscr.refresh()
-            search_term = textbox.edit().strip()
+            
+            def validate(ch):
+                if ch == 10:  # Enter key
+                    return 7  # Ctrl-G, signals Textbox to return
+                return ch
+
+            search_term = textbox.edit(validate).strip()
             
             if search_term:
                 self.update_header(title_win, f"Searching for: {search_term}", "Search")
