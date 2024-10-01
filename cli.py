@@ -473,20 +473,24 @@ class BlusoundCLI:
         input_str = ""
         
         while True:
-            ch = stdscr.getch()
-            
-            if ch == 10:  # Enter key
-                break
-            elif ch == 127 or ch == 8:  # Backspace
-                if input_str:
-                    input_str = input_str[:-1]
-                    y, x = stdscr.getyx()
-                    stdscr.addstr(y, x-1, " ")  # Clear the last character
-                    stdscr.move(y, x-1)
-            else:
-                input_str += chr(ch)
-                stdscr.addstr(chr(ch))
-            stdscr.refresh()
+            try:
+                ch = stdscr.getch()
+                
+                if ch == 10:  # Enter key
+                    break
+                elif ch == 127 or ch == 8:  # Backspace
+                    if input_str:
+                        input_str = input_str[:-1]
+                        y, x = stdscr.getyx()
+                        stdscr.addstr(y, x-1, " ")  # Clear the last character
+                        stdscr.move(y, x-1)
+                elif ch >= 0 and ch <= 255:  # Valid ASCII range
+                    input_str += chr(ch)
+                    stdscr.addstr(chr(ch))
+                stdscr.refresh()
+            except ValueError:
+                # Ignore invalid characters
+                pass
 
         curses.noecho()
         return input_str.strip()
