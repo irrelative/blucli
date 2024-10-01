@@ -8,6 +8,8 @@ from logging.handlers import RotatingFileHandler
 import json
 from config import get_preference, set_preference
 import curses.textpad
+import signal
+import sys
 
 # Set up logging
 log_file = 'logs/cli.log'
@@ -525,8 +527,13 @@ class BlusoundCLI:
         stdscr.addstr(height - 2, 2, "UP/DOWN: navigate, ENTER: select, b: back")
         stdscr.refresh()
 
+def signal_handler(sig, frame):
+    curses.endwin()
+    sys.exit(0)
+
 if __name__ == "__main__":
     cli = BlusoundCLI()
+    signal.signal(signal.SIGINT, signal_handler)
     try:
         curses.wrapper(cli.main)
     except Exception as e:
