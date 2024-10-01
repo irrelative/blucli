@@ -270,8 +270,9 @@ class BlusoundPlayer:
             root = ET.fromstring(response.text)
             sources = []
             for item in root.findall('item'):
+                text = item.get('text', '').strip()
                 source = PlayerSource(
-                    text=item.get('text', ''),
+                    text=text,
                     image=item.get('image', ''),
                     browse_key=item.get('browseKey'),
                     play_url=item.get('playURL'),
