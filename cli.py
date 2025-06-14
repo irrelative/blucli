@@ -504,14 +504,8 @@ class BlusoundCLI:
                 self.update_header(title_win, f"Searching for: {search_term}", "Search")
                 stdscr.refresh()
                 if self.active_player and self.active_player.sources:
-                    # Find the Library source
-                    library_source = next((source for source in self.active_player.sources if source.text == "Library"), None)
-                    if library_source and library_source.search_key:
-                        self.search_results = self.active_player.search(library_source.search_key, search_term)
-                        self.search_selected_index = 0
-                    else:
-                        self.update_header(title_win, "Library source not found", "Search")
-                        return False
+                    self.search_results = self.active_player.search(self.active_player.sources[0].search_key, search_term)
+                    self.search_selected_index = 0
                 else:
                     self.update_header(title_win, "No active player or sources available", "Search")
                     return False
