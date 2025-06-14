@@ -207,31 +207,45 @@ class BlusoundCLI:
         stdscr.addstr(6, 2, "n: next page, p: previous page, b: back to player control")
         stdscr.addstr(8, 2, "Select Source:")
         
-        if not self.current_sources:
-            self.current_sources = active_player.sources
+        # Ensure current_sources is populated if it's the initial entry to source selection
+        if not self.current_sources and self.active_player:
+            self.current_sources = self.active_player.sources
 
-        total_items = len(self.current_sources)
+        # Ensure selected_source_index is initialized
+        if not self.selected_source_index:
+            self.selected_source_index = [0]
+
+        if not self.current_sources: # If still no sources (e.g. player has none)
+            stdscr.addstr(9, 4, "No sources available.")
+            stdscr.refresh()
+            return
+
+        # At this point, self.current_sources is not empty.
+        # Ensure selected_source_index[-1] is valid for current_sources
+        # Clamp to the last valid index if out of bounds high
+        if self.selected_source_index[-1] >= len(self.current_sources):
+            self.selected_source_index[-1] = max(0, len(self.current_sources) - 1)
+        # Clamp to 0 if out of bounds low (shouldn't happen with current logic but defensive)
+        if self.selected_source_index[-1] < 0:
+             self.selected_source_index[-1] = 0
+        
+        total_items = len(self.current_sources) # Should be > 0 here if we reached this point
+
         current_page = max(0, self.selected_source_index[-1] // max_display_items)
         start_index = max(0, current_page * max_display_items)
         end_index = min(start_index + max_display_items, total_items)
 
         for i in range(start_index, end_index):
             source = self.current_sources[i]
-            indent = "  " * (len(self.selected_source_index) - 1)
+            indent = "  " * (len(self.selected_source_index) - 1) # Current depth for indentation
             prefix = ">" if i == self.selected_source_index[-1] else " "
             expand_indicator = "+" if source.browse_key else " "
-            display_index = i - start_index
+            display_index = i - start_index # Relative to the start of the window
             stdscr.addstr(9 + display_index, 4, f"{indent}{prefix} {expand_indicator} {source.text}")
 
         if total_items > max_display_items:
             page_info = f"Page {current_page + 1}/{(total_items + max_display_items - 1) // max_display_items}"
             stdscr.addstr(height - 2, width - len(page_info) - 2, page_info)
-
-        # Ensure the selected index is within the current page
-        if self.selected_source_index[-1] >= end_index:
-            self.selected_source_index[-1] = end_index - 1
-        elif self.selected_source_index[-1] < start_index:
-            self.selected_source_index[-1] = start_index
 
         # Remove the automatic fetching of nested sources
 
@@ -345,41 +359,139 @@ class BlusoundCLI:
             # Log the pretty print data
             logger.info(f"Pretty print data:\n{pretty_state}")
 
+            # Display in a new scrollable window
+            height, width = stdscr.getmaxyx()
+            lines = pretty_state.splitlines()
+            
+            content_height = len(lines)
+            content_width = 0
+            if lines:
+                content_width = max(len(line) for line in lines)
+            content_width = min(content_width, width - 6) # Max content width for pad
+
+            popup_content_h = min(content_height, height - 6)
+            popup_content_w = content_width
+            
+            popup_height = popup_content_h + 2 # For border
+            popup_width = popup_content_w + 2   # For border
+            
+            popup_start_y = (height - popup_height) // 2
+            popup_start_x = (width - popup_width) // 2
+            
+            popup_win = curses.newwin(popup_height, popup_width, popup_start_y, popup_start_x)
+            popup_win.box()
+            popup_win.addstr(0, 2, " Player State (UP/DOWN scroll, 'q' to close) ", curses.A_REVERSE)
+
+            content_pad = curses.newpad(content_height + 1, content_width + 1) # Pad for actual content
+            for i, line_text in enumerate(lines):
+                try:
+                    content_pad.addstr(i, 0, line_text[:content_width])
+                except curses.error:
+                    pass 
+            
+            pad_pos = 0 # Current top line of the pad to display
+            popup_win.refresh()
+
+            while True:
+                sminrow = popup_start_y + 1 # Screen y for top of pad viewport
+                smincol = popup_start_x + 1 # Screen x for left of pad viewport
+                smaxrow = popup_start_y + popup_height - 2 # Screen y for bottom of pad viewport
+                smaxcol = popup_start_x + popup_width - 2  # Screen x for right of pad viewport
+                
+                content_pad.refresh(pad_pos, 0, sminrow, smincol, smaxrow, smaxcol)
+                
+                key_press = stdscr.getch() # Use stdscr.getch() as main loop does
+                
+                if key_press == ord('q'):
+                    break
+                elif key_press == curses.KEY_DOWN:
+                    if pad_pos < content_height - popup_content_h: # Check scroll bounds
+                         pad_pos += 1
+                elif key_press == curses.KEY_UP:
+                    if pad_pos > 0:
+                        pad_pos -= 1
+            
+            stdscr.touchwin() # Mark window as changed
+            stdscr.refresh()   # Refresh underlying screen
+
     def handle_source_selection(self, key: int, title_win: curses.window) -> Tuple[bool, List[int]]:
         height, _ = title_win.getmaxyx()
-        max_display_items = height - 12
-        logger.info("Key pressed: %s", key)
+        max_display_items = height - 12 # Used for page navigation logic
+        logger.info("Key pressed in source selection: %s", key)
 
-        if key == KEY_B:
+        if key == KEY_B: # Back to player control
             self.source_selection_mode = False
+            self.current_sources = [] # Reset for next entry
+            self.selected_source_index = [0] # Reset for next entry
             return False, self.selected_source_index
-        elif key == KEY_UP:
+
+        # Ensure selected_source_index is initialized (should be by display logic, but defensive)
+        if not self.selected_source_index:
+            self.selected_source_index = [0]
+
+        if key == KEY_LEFT: # Navigate up the source hierarchy
+            if len(self.selected_source_index) > 1: # Can only go left if not at root level
+                self.selected_source_index.pop()
+                # Reconstruct current_sources based on the new (parent) path
+                path_sources = self.active_player.sources
+                for i in range(len(self.selected_source_index) - 1): # Iterate to parent of new current level
+                    idx = self.selected_source_index[i]
+                    if idx < len(path_sources) and hasattr(path_sources[idx], 'children'):
+                        path_sources = path_sources[idx].children
+                    else: # Path broken or item has no children
+                        path_sources = [] 
+                        break
+                self.current_sources = path_sources
+                
+                # Ensure last index is valid for newly populated current_sources
+                if self.current_sources and self.selected_source_index[-1] >= len(self.current_sources):
+                    self.selected_source_index[-1] = max(0, len(self.current_sources) - 1)
+                elif not self.current_sources: # Navigated to an empty list
+                    self.selected_source_index[-1] = 0 
+            else: # At root level, pressing left exits source selection mode
+                self.source_selection_mode = False
+                self.current_sources = []
+                self.selected_source_index = [0]
+                return False, self.selected_source_index
+            return True, self.selected_source_index # Stay in source selection mode
+
+        # Handle other keys only if there are current_sources to interact with
+        if not self.current_sources:
+            self.update_header(title_win, "No sources available to navigate.", "Source Selection")
+            return True, self.selected_source_index # Stay in mode, but do nothing else
+
+        # At this point, self.current_sources is NOT empty.
+        # Ensure current index is valid before use for other operations
+        current_idx_val = self.selected_source_index[-1]
+        if current_idx_val >= len(self.current_sources):
+            self.selected_source_index[-1] = len(self.current_sources) - 1
+        if current_idx_val < 0: self.selected_source_index[-1] = 0 # Should not happen
+
+        # Handle UP, DOWN, page navigation (n, p), RIGHT (expand), ENTER (select/play)
+        if key == KEY_UP:
             if self.selected_source_index[-1] > 0:
                 self.selected_source_index[-1] -= 1
         elif key == KEY_DOWN:
             if self.selected_source_index[-1] < len(self.current_sources) - 1:
                 self.selected_source_index[-1] += 1
         elif key == ord('n'):  # Next page
-            next_page_start = ((self.selected_source_index[-1] // max_display_items) + 1) * max_display_items
-            if next_page_start < len(self.current_sources):
-                self.selected_source_index[-1] = next_page_start
+            current_page_items = max_display_items if max_display_items > 0 else len(self.current_sources) # Avoid division by zero
+            next_page_start_index = ((self.selected_source_index[-1] // current_page_items) + 1) * current_page_items
+            if next_page_start_index < len(self.current_sources):
+                self.selected_source_index[-1] = next_page_start_index
+            else: # If trying to go past last page, go to last item
+                self.selected_source_index[-1] = len(self.current_sources) -1
         elif key == ord('p'):  # Previous page
-            prev_page_start = ((self.selected_source_index[-1] // max_display_items) - 1) * max_display_items
-            if prev_page_start >= 0:
-                self.selected_source_index[-1] = prev_page_start
-        elif key == KEY_LEFT:
-            if len(self.selected_source_index) > 1:
-                self.selected_source_index.pop()
-                self.current_sources = self.active_player.sources
-                for index in self.selected_source_index[:-1]:
-                    self.current_sources = self.current_sources[index].children
-            else:
-                self.source_selection_mode = False
-                return False, self.selected_source_index
-        elif key == KEY_RIGHT or key == KEY_ENTER:
+            current_page_items = max_display_items if max_display_items > 0 else len(self.current_sources)
+            prev_page_start_index = ((self.selected_source_index[-1] // current_page_items) - 1) * current_page_items
+            if prev_page_start_index >= 0:
+                self.selected_source_index[-1] = prev_page_start_index
+            else: # If trying to go before first page, go to first item
+                self.selected_source_index[-1] = 0
+        elif key == KEY_RIGHT or key == KEY_ENTER: # Expand or Play/Select
             selected_source = self.current_sources[self.selected_source_index[-1]]
-            if selected_source.browse_key:
-                self.active_player.get_nested_sources(selected_source)
+            if selected_source.browse_key: # If it's expandable
+                self.active_player.get_nested_sources(selected_source) # Fetch children
                 if selected_source.children:
                     self.current_sources = selected_source.children
                     self.selected_source_index.append(0)
@@ -504,10 +616,19 @@ class BlusoundCLI:
                 self.update_header(title_win, f"Searching for: {search_term}", "Search")
                 stdscr.refresh()
                 if self.active_player and self.active_player.sources:
-                    self.search_results = self.active_player.search(self.active_player.sources[0].search_key, search_term)
-                    self.search_selected_index = 0
+                    search_key_to_use = self.active_player.sources[0].search_key
+                    if search_key_to_use:
+                        self.search_results = self.active_player.search(search_key_to_use, search_term)
+                        self.search_selected_index = 0
+                        if not self.search_results:
+                             self.update_header(title_win, f"No results for: {search_term}", "Search")
+                        # Proceed to display results (even if empty)
+                    else:
+                        self.update_header(title_win, "Search not available (no search key for current sources).", "Search")
+                        self.search_results = [] # Clear previous results
+                        return False # Exit search mode
                 else:
-                    self.update_header(title_win, "No active player or sources available", "Search")
+                    self.update_header(title_win, "No active player or sources available for search.", "Search")
                     return False
             else:
                 self.update_header(title_win, "Search cancelled", "Search")

@@ -129,12 +129,17 @@ class BlusoundPlayer:
                 logger.warning(f"No nested sources found for {source.text}")
 
     def initialize_sources(self) -> None:
-        self.sources = self.capture_sources()
-        if not self.sources:
-            logger.warning(f"No sources found for {self.name}. Retrying...")
-            time.sleep(1)  # Wait for a second before retrying
+        max_retries = 3
+        retry_delay = 1  # seconds
+        for attempt in range(max_retries):
             self.sources = self.capture_sources()
-        logger.info(f"Initialized {len(self.sources)} sources for {self.name}")
+            if self.sources:
+                logger.info(f"Initialized {len(self.sources)} sources for {self.name} after {attempt + 1} attempt(s).")
+                return
+            logger.warning(f"No sources found for {self.name}. Attempt {attempt + 1}/{max_retries}. Retrying in {retry_delay}s...")
+            time.sleep(retry_delay)
+        logger.error(f"Failed to initialize sources for {self.name} after {max_retries} attempts.")
+        # self.sources will remain empty if all retries fail
 
     def get_status(self, timeout: Optional[int] = None, etag: Optional[str] = None) -> Tuple[bool, Union[PlayerStatus, str]]:
         url = "/Status"
